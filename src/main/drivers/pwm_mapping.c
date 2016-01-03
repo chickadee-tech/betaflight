@@ -521,6 +521,72 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
+#if defined(CKD_F3FC)
+static const uint16_t multiPPM[] = {
+    // These are the TIM pins on the butterfly connector.
+    PWM1  | (MAP_TO_PPM_INPUT << 8), // PPM input
+    PWM2  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM3  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM4  | (MAP_TO_SERVO_OUTPUT << 8),
+
+    // These are the four through-hole headers on the board.
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
+
+    // These are TIMG1. They can be anything.
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
+
+    // These are TIMG2. They can be anything.
+    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM16 | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+static const uint16_t multiPWM[] = {
+    // These are the TIM pins on the butterfly connector.
+    PWM1  | (MAP_TO_SERVO_OUTPUT << 8), // PPM input
+    PWM2  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM3  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM4  | (MAP_TO_SERVO_OUTPUT << 8),
+
+    // These are the four through-hole headers on the board.
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
+
+    // These are TIMG1. They can be anything.
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
+
+    // These are TIMG2. They can be anything.
+    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM14 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM15 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM16 | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+    // TODO
+    0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+    // TODO
+    0xFFFF
+};
+#endif
+
 static const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
@@ -703,7 +769,7 @@ if (init->useBuzzerP6) {
         if (init->useChannelForwarding && !init->airplane) {
 #if defined(NAZE) && defined(LED_STRIP_TIMER)
             // if LED strip is active, PWM5-8 are unavailable, so map AUX1+AUX2 to PWM13+PWM14
-            if (init->useLEDStrip) { 
+            if (init->useLEDStrip) {
                 if (timerIndex >= PWM13 && timerIndex <= PWM14) {
                   type = MAP_TO_SERVO_OUTPUT;
                 }

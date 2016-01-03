@@ -301,6 +301,41 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
 #endif
 
+#ifdef CKD_F3FC
+const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
+    // TIM1-4
+    { TIM8,  GPIOA, Pin_14,  TIM_Channel_2, TIM8_UP_IRQn,               0, Mode_AF_PP, GPIO_PinSource14, GPIO_AF_5},
+    { TIM17, GPIOB, Pin_9,   TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_1},
+    { TIM16, GPIOB, Pin_8,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_1},
+    { TIM2,  GPIOB, Pin_10,  TIM_Channel_3, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1},
+
+    // Internal timer group for the first four outputs.
+    { TIM1,  GPIOE, Pin_9,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_2},
+    { TIM1,  GPIOE, Pin_11,  TIM_Channel_2, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource11,  GPIO_AF_2},
+    { TIM1,  GPIOE, Pin_13,  TIM_Channel_3, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource13,  GPIO_AF_2},
+    { TIM1,  GPIOE, Pin_14,  TIM_Channel_4, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource14,  GPIO_AF_2},
+
+    // TIMG1_CH1-4
+    { TIM3, GPIOC, Pin_9, TIM_Channel_4, TIM3_IRQn,                  1, Mode_AF_PP, GPIO_PinSource9, GPIO_AF_2},
+    { TIM3, GPIOC, Pin_8, TIM_Channel_3, TIM3_IRQn,                  1, Mode_AF_PP, GPIO_PinSource8, GPIO_AF_2},
+    { TIM3, GPIOC, Pin_7, TIM_Channel_2, TIM3_IRQn,                  1, Mode_AF_PP, GPIO_PinSource7, GPIO_AF_2},
+    { TIM3, GPIOC, Pin_6, TIM_Channel_1, TIM3_IRQn,                  1, Mode_AF_PP, GPIO_PinSource6, GPIO_AF_2},
+
+    // TIMG2_CH1-4
+    { TIM4, GPIOD, Pin_15,  TIM_Channel_4, TIM4_IRQn,                1, Mode_AF_PP, GPIO_PinSource15,  GPIO_AF_2},
+    { TIM4, GPIOD, Pin_14,  TIM_Channel_3, TIM4_IRQn,                1, Mode_AF_PP, GPIO_PinSource14,  GPIO_AF_2},
+    { TIM4, GPIOD, Pin_13,  TIM_Channel_2, TIM4_IRQn,                1, Mode_AF_PP, GPIO_PinSource13,  GPIO_AF_2},
+    { TIM4, GPIOD, Pin_12,  TIM_Channel_1, TIM4_IRQn,                1, Mode_AF_PP, GPIO_PinSource12,  GPIO_AF_2},
+};
+
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) |TIM_N(17))
+
+#define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOE)
+
+#endif
+
 #define USED_TIMER_COUNT BITCOUNT(USED_TIMERS)
 #define CC_CHANNELS_PER_TIMER 4              // TIM_Channel_1..4
 
