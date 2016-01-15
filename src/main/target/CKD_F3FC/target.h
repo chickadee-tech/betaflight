@@ -107,7 +107,7 @@
 
 #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOB
 #define MPU6500_CS_GPIO                  GPIOB
-#define MPU6500_CS_PIN                   GPIO_Pin_13
+#define MPU6500_CS_PIN                   GPIO_Pin_12
 #define MPU6500_SPI_INSTANCE             SPI2
 
 #define USE_SPI
@@ -126,7 +126,7 @@
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW270_DEG
+#define ACC_MPU6500_ALIGN CW180_DEG
 
 // MPU6500 interrupt
 //#define DEBUG_MPU_DATA_READY_INTERRUPT

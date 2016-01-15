@@ -304,16 +304,16 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #ifdef CKD_F3FC
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // TIM1-4
-    { TIM8,  GPIOA, Pin_14,  TIM_Channel_2, TIM8_UP_IRQn,               0, Mode_AF_PP, GPIO_PinSource14, GPIO_AF_5},
-    { TIM17, GPIOB, Pin_9,   TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 0, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_1},
-    { TIM16, GPIOB, Pin_8,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_1},
-    { TIM2,  GPIOB, Pin_10,  TIM_Channel_3, TIM2_IRQn,               0, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1},
+    { TIM8,  GPIOA, Pin_14,  TIM_Channel_2, TIM8_CC_IRQn,            0, Mode_AF_PP, GPIO_PinSource14, GPIO_AF_5},
+    { TIM17, GPIOB, Pin_9,   TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_1},
+    { TIM16, GPIOB, Pin_8,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_1},
+    { TIM2,  GPIOB, Pin_10,  TIM_Channel_3, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1},
 
     // Internal timer group for the first four outputs.
-    { TIM1,  GPIOE, Pin_9,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_2},
-    { TIM1,  GPIOE, Pin_11,  TIM_Channel_2, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource11,  GPIO_AF_2},
-    { TIM1,  GPIOE, Pin_13,  TIM_Channel_3, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource13,  GPIO_AF_2},
-    { TIM1,  GPIOE, Pin_14,  TIM_Channel_4, TIM1_UP_TIM16_IRQn,      0, Mode_AF_PP, GPIO_PinSource14,  GPIO_AF_2},
+    { TIM1,  GPIOE, Pin_9,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_2},
+    { TIM1,  GPIOE, Pin_11,  TIM_Channel_2, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource11,  GPIO_AF_2},
+    { TIM1,  GPIOE, Pin_13,  TIM_Channel_3, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource13,  GPIO_AF_2},
+    { TIM1,  GPIOE, Pin_14,  TIM_Channel_4, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource14,  GPIO_AF_2},
 
     // TIMG1_CH1-4
     { TIM3, GPIOC, Pin_9, TIM_Channel_4, TIM3_IRQn,                  1, Mode_AF_PP, GPIO_PinSource9, GPIO_AF_2},
@@ -480,7 +480,7 @@ void timerConfigure(const timerHardware_t *timerHardwarePtr, uint16_t period, ui
         timerNVICConfigure(TIM1_UP_TIM16_IRQn);
         break;
 #endif
-#if defined(STM32F10X_XL)
+#if defined(STM32F10X_XL) || defined(STM32F303xC)
     case TIM8_CC_IRQn:
         timerNVICConfigure(TIM8_UP_IRQn);
         break;

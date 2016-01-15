@@ -524,8 +524,8 @@ static const uint16_t airPWM[] = {
 #if defined(CKD_F3FC)
 static const uint16_t multiPPM[] = {
     // These are the TIM pins on the butterfly connector.
-    PWM1  | (MAP_TO_PPM_INPUT << 8), // PPM input
-    PWM2  | (MAP_TO_SERVO_OUTPUT << 8),
+    PWM1  | (MAP_TO_PPM_INPUT << 8), // debug swclk
+    PWM2  | (MAP_TO_SERVO_OUTPUT << 8), // PPM input
     PWM3  | (MAP_TO_SERVO_OUTPUT << 8),
     PWM4  | (MAP_TO_SERVO_OUTPUT << 8),
 
