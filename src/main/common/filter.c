@@ -24,6 +24,15 @@
 #include "common/filter.h"
 #include "common/maths.h"
 
+#include "drivers/gyro_sync.h"
+
+
+#define M_LN2_FLOAT	0.69314718055994530942f
+#define M_PI_FLOAT	3.14159265358979323846f
+
+
+#define BIQUAD_GAIN 6.0f          /* gain in db */
+#define BIQUAD_BANDWIDTH 1.9f     /* bandwidth in octaves */
 
 // PT1 Low Pass filter (when no dT specified it will be calculated from the cycleTime)
 float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float dT) {
@@ -38,37 +47,63 @@ float filterApplyPt1(float input, filterStatePt1_t *filter, uint8_t f_cut, float
     return filter->state;
 }
 
-static int8_t gyroFIRCoeff_500[FILTER_TAPS] = { 18, 14, 16, 20, 22, 24, 25, 25, 24, 20, 18, 12, 18 };  // looptime=500;
-static int8_t gyroFIRCoeff_1000[FILTER_TAPS] = { 0, 0, 0, 0, 0, 0, 12, 23, 40, 51, 52, 40, 38 }; // looptime=1000; group delay 2.5ms; -0.5db = 32Hz ; -1db = 45Hz; -5db = 97Hz; -10db = 132Hz
-
-int8_t * filterGetFIRCoefficientsTable(uint8_t filter_level, uint32_t targetLooptime)
+/* sets up a biquad Filter */
+biquad_t *BiQuadNewLpf(uint8_t filterCutFreq)
 {
-    if (filter_level == 0) {
-        return NULL;
-    }
+	float samplingRate;
+    samplingRate = 1 / (targetLooptime * 0.000001f);
 
-    // filter for 2kHz looptime
-    if (targetLooptime == 500) {
-        return gyroFIRCoeff_500;
-    } else {    // filter for 1kHz looptime
-        return gyroFIRCoeff_1000;
-    }
+    biquad_t *newState;
+    float omega, sn, cs, alpha;
+    float a0, a1, a2, b0, b1, b2;
+
+    newState = malloc(sizeof(biquad_t));
+    if (newState == NULL)
+        return NULL;
+
+    /* setup variables */
+    omega = 2 * M_PI_FLOAT * (float) filterCutFreq / samplingRate;
+    sn = sinf(omega);
+    cs = cosf(omega);
+    alpha = sn * sinf(M_LN2_FLOAT /2 * BIQUAD_BANDWIDTH * omega /sn);
+
+    b0 = (1 - cs) /2;
+    b1 = 1 - cs;
+    b2 = (1 - cs) /2;
+    a0 = 1 + alpha;
+    a1 = -2 * cs;
+    a2 = 1 - alpha;
+
+    /* precompute the coefficients */
+    newState->a0 = b0 /a0;
+    newState->a1 = b1 /a0;
+    newState->a2 = b2 /a0;
+    newState->a3 = a1 /a0;
+    newState->a4 = a2 /a0;
+
+    /* zero initial samples */
+    newState->x1 = newState->x2 = 0;
+    newState->y1 = newState->y2 = 0;
+
+    return newState;
 }
 
-// Thanks to Qcopter & BorisB & DigitalEntity
-void filterApplyFIR(int16_t data[3], int16_t state[3][FILTER_TAPS], int8_t coeff[FILTER_TAPS])
+/* Computes a biquad_t filter on a sample */
+float applyBiQuadFilter(float sample, biquad_t *state)
 {
-    int32_t FIRsum;
-    int axis, i;
+    float result;
 
-    for (axis = 0; axis < XYZ_AXIS_COUNT; axis++) {
-        FIRsum = 0;
-        for (i = 0; i <= FILTER_TAPS-2; i++) {
-            state[axis][i] = state[axis][i + 1];
-            FIRsum += state[axis][i] * (int16_t)coeff[i];
-        }
-        state[axis][FILTER_TAPS-1] = data[axis];
-        FIRsum += state[axis][FILTER_TAPS-1] * coeff[FILTER_TAPS-1];
-        data[axis] = FIRsum / 256;
-    }
+    /* compute result */
+    result = state->a0 * sample + state->a1 * state->x1 + state->a2 * state->x2 -
+        state->a3 * state->y1 - state->a4 * state->y2;
+
+    /* shift x1 to x2, sample to x1 */
+    state->x2 = state->x1;
+    state->x1 = sample;
+
+    /* shift y1 to y2, result to y1 */
+    state->y2 = state->y1;
+    state->y1 = result;
+
+    return result;
 }

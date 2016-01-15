@@ -303,6 +303,10 @@ void init(void)
         beeperConfig.isInverted = true;
     }
 #endif
+#ifdef CC3D
+    if (masterConfig.use_buzzer_p6 == 1)
+        beeperConfig.gpioPin = Pin_2;
+#endif
 
     beeperInit(&beeperConfig);
 #endif
@@ -544,7 +548,17 @@ int main(void) {
     rescheduleTask(TASK_GYROPID, targetLooptime - INTERRUPT_WAIT_TIME);
 
     setTaskEnabled(TASK_GYROPID, true);
-    setTaskEnabled(TASK_ACCEL, sensors(SENSOR_ACC));
+    if(sensors(SENSOR_ACC)) {
+        setTaskEnabled(TASK_ACCEL, true);
+        switch(targetLooptime) {
+            case(500):
+                rescheduleTask(TASK_ACCEL, 10000);
+                break;
+            default:
+            case(1000):
+                rescheduleTask(TASK_ACCEL, 1000);
+        }
+    }
     setTaskEnabled(TASK_SERIAL, true);
     setTaskEnabled(TASK_BEEPER, true);
     setTaskEnabled(TASK_BATTERY, feature(FEATURE_VBAT) || feature(FEATURE_CURRENT_METER));
@@ -572,6 +586,10 @@ int main(void) {
 #endif
 #ifdef LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));
+#endif
+#ifdef USE_BST
+    setTaskEnabled(TASK_BST_READ_WRITE, true);
+    setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
 
     while (1) {

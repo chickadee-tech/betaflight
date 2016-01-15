@@ -118,7 +118,7 @@ int16_t telemTemperature1;      // gyro sensor temperature
 static uint32_t disarmAt;     // Time of automatic disarm when "Don't spin the motors when armed" is enabled and auto_disarm_delay is nonzero
 
 extern uint32_t currentTime;
-extern uint8_t dynP8[3], dynI8[3], dynD8[3], PIDweight[3];
+extern uint8_t PIDweight[3];
 
 static bool isRXDataNew;
 static filterStatePt1_t filteredCycleTimeState;
@@ -207,6 +207,13 @@ void filterRc(void){
     }
 }
 
+void scaleRcCommandToFpvCamAngle(void) {
+    int16_t roll = rcCommand[ROLL];
+    int16_t yaw = rcCommand[YAW];
+    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw, -500, 500);
+    rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll, -500, 500);
+}
+
 void annexCode(void)
 {
     int32_t tmp, tmp2;
@@ -250,10 +257,6 @@ void annexCode(void)
             rcCommand[axis] = (lookupYawRC[tmp2] + (tmp - tmp2 * 100) * (lookupYawRC[tmp2 + 1] - lookupYawRC[tmp2]) / 100) * -masterConfig.yaw_control_direction;
             prop1 = 100 - (uint16_t)currentControlRateProfile->rates[axis] * ABS(tmp) / 500;
         }
-        // FIXME axis indexes into pids.  use something like lookupPidIndex(rc_alias_e alias) to reduce coupling.
-        dynP8[axis] = (uint16_t)currentProfile->pidProfile.P8[axis] * prop1 / 100;
-        dynI8[axis] = (uint16_t)currentProfile->pidProfile.I8[axis] * prop1 / 100;
-        dynD8[axis] = (uint16_t)currentProfile->pidProfile.D8[axis] * prop1 / 100;
 
         // non coupled PID reduction scaler used in PID controller 1 and PID controller 2. YAW TPA disabled. 100 means 100% of the pids
         if (axis == YAW) {
@@ -283,6 +286,11 @@ void annexCode(void)
 
     if (masterConfig.rxConfig.rcSmoothing) {
         filterRc();
+    }
+
+    // experimental scaling of RC command to FPV cam angle
+    if (masterConfig.rxConfig.fpvCamAngleDegrees && !FLIGHT_MODE(HEADFREE_MODE)) {
+        scaleRcCommandToFpvCamAngle();
     }
 
     if (ARMING_FLAG(ARMED)) {
@@ -668,6 +676,10 @@ void taskMainPidLoop(void)
         if (sensors(SENSOR_MAG)) {
             updateMagHold();
         }
+#endif
+
+#ifdef GTUNE
+        updateGtuneState();
 #endif
 
 #if defined(BARO) || defined(SONAR)

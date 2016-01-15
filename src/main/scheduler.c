@@ -78,6 +78,10 @@ void taskUpdateDisplay(void);
 void taskTelemetry(void);
 void taskLedStrip(void);
 void taskSystem(void);
+#ifdef USE_BST
+void taskBstReadWrite(void);
+void taskBstMasterProcess(void);
+#endif
 
 static cfTask_t cfTasks[TASK_COUNT] = {
     [TASK_SYSTEM] = {
@@ -202,11 +206,26 @@ static cfTask_t cfTasks[TASK_COUNT] = {
         .staticPriority = TASK_PRIORITY_IDLE,
     },
 #endif
+
+#ifdef USE_BST
+    [TASK_BST_READ_WRITE] = {
+        .taskName = "BST_MASTER_WRITE",
+        .taskFunc = taskBstReadWrite,
+        .desiredPeriod = 1000000 / 500,         // 500 Hz
+        .staticPriority = TASK_PRIORITY_HIGH,
+    },
+
+    [TASK_BST_MASTER_PROCESS] = {
+        .taskName = "BST_MASTER_PROCESS",
+        .taskFunc = taskBstMasterProcess,
+        .desiredPeriod = 1000000 / 50,          // 50 Hz
+        .staticPriority = TASK_PRIORITY_IDLE,
+    },
+#endif
 };
 
 #define REALTIME_GUARD_INTERVAL_MIN     10
 #define REALTIME_GUARD_INTERVAL_MAX     300
-#define REALTIME_GUARD_INTERVAL_MARGIN  25
 
 void taskSystem(void)
 {
@@ -227,7 +246,7 @@ void taskSystem(void)
         }
     }
 
-    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, REALTIME_GUARD_INTERVAL_MIN, REALTIME_GUARD_INTERVAL_MAX) + REALTIME_GUARD_INTERVAL_MARGIN;
+    realtimeGuardInterval = constrain(maxNonRealtimeTaskTime, REALTIME_GUARD_INTERVAL_MIN, REALTIME_GUARD_INTERVAL_MAX);
 #if defined SCHEDULER_DEBUG
     debug[2] = realtimeGuardInterval;
 #endif
