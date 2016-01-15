@@ -744,7 +744,7 @@ void taskMainPidLoopCheck(void) {
     uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
 
     while (1) {
-        if (gyroSyncCheckUpdate() || ((currentDeltaTime + (micros() - currentTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
+        if (false /* gyroSyncCheckUpdate() */ || ((currentDeltaTime + (micros() - currentTime)) >= (targetLooptime + GYRO_WATCHDOG_DELAY))) {
             break;
         }
     }
