@@ -90,7 +90,10 @@
 // Pin 79 - SPI1_MISO - PB14 (SPI2)
 // Pin 80 - SPI1_MOSI - PB15 (SPI2)
 
-#define TARGET_BOARD_IDENTIFIER "CKD3" // STM Discovery F3
+#define TARGET_BOARD_IDENTIFIER "CKD3"
+
+// Define DEBUG_BOARD if you have a breakout board above the main fc board.
+//#define DEBUG_BOARD
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_13
@@ -114,14 +117,18 @@
 #define USE_SPI_DEVICE_2
 // TODO(tannewt): Support SPI 3.
 
+#ifdef DEBUG_BOARD
+#define USABLE_TIMER_CHANNEL_COUNT 15
+#else
 #define USABLE_TIMER_CHANNEL_COUNT 16
+#endif  // DEBUG_BOARD
 
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #define GYRO_MPU6500_ALIGN CW270_DEG
 
-#define USE_FAKE_GYRO
+//#define USE_FAKE_GYRO
 
 #define ACC
 #define USE_ACC_MPU6500
@@ -131,7 +138,7 @@
 // MPU6500 interrupt
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
-#define ENSURE_MPU_DATA_READY_IS_LOW
+//#define ENSURE_MPU_DATA_READY_IS_LOW
 
 // TODO(tannewt): Insert baro defines here.
 // TODO(tannewt): Insert mag defines here.

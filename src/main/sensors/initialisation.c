@@ -168,6 +168,31 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
     return &MotolabF3MPU6050Config;
 #endif
 
+#if defined(CKD_F3FC)
+#ifdef DEBUG_BOARD
+    static const extiConfig_t chickadeeF3FCMPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOE,
+            .gpioPort = GPIOE,
+            .gpioPin = Pin_5,
+            .exti_port_source = EXTI_PortSourceGPIOE,
+            .exti_pin_source = EXTI_PinSource5,
+            .exti_line = EXTI_Line5,
+            .exti_irqn = EXTI9_5_IRQn
+    };
+#else
+    static const extiConfig_t chickadeeF3FCMPUIntExtiConfig = {
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+            .gpioPort = GPIOA,
+            .gpioPin = Pin_13,
+            .exti_port_source = EXTI_PortSourceGPIOA,
+            .exti_pin_source = EXTI_PinSource13,
+            .exti_line = EXTI_Line13,
+            .exti_irqn = EXTI15_10_IRQn
+    };
+#endif  // DEBUG_BOARD
+    return &chickadeeF3FCMPUIntExtiConfig;
+#endif
+
     return NULL;
 }
 

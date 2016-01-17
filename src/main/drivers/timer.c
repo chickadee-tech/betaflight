@@ -304,7 +304,10 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 #ifdef CKD_F3FC
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // TIM1-4
-    { TIM8,  GPIOA, Pin_14,  TIM_Channel_2, TIM8_CC_IRQn,            0, Mode_AF_PP, GPIO_PinSource14, GPIO_AF_5},
+// Don't claim the serial debug clock line when we have a debug board.
+#ifndef DEBUG_BOARD
+    { TIM8,  GPIOA, Pin_14,  TIM_Channel_2, TIM8_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource14, GPIO_AF_5},
+#endif
     { TIM17, GPIOB, Pin_9,   TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_1},
     { TIM16, GPIOB, Pin_8,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_1},
     { TIM2,  GPIOB, Pin_10,  TIM_Channel_3, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1},
