@@ -95,6 +95,8 @@
 // Define DEBUG_BOARD if you have a breakout board above the main fc board.
 //#define DEBUG_BOARD
 
+//#define V3_BOARD
+
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_13
 #define LED0_PERIPHERAL RCC_AHBPeriph_GPIOC
@@ -108,12 +110,19 @@
 #define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
 //#define LED2_INVERTED
 
-#define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOB
-#define MPU6500_CS_GPIO                  GPIOB
-#define MPU6500_CS_PIN                   GPIO_Pin_12
-#define MPU6500_SPI_INSTANCE             SPI2
-
 #define USE_SPI
+#ifdef V3_BOARD
+  #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOB
+  #define MPU6500_CS_GPIO                  GPIOB
+  #define MPU6500_CS_PIN                   GPIO_Pin_12
+  #define MPU6500_SPI_INSTANCE             SPI2
+#else
+  #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
+  #define MPU6500_CS_GPIO                  GPIOA
+  #define MPU6500_CS_PIN                   GPIO_Pin_4
+  #define MPU6500_SPI_INSTANCE             SPI1
+#endif
+#define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 // TODO(tannewt): Support SPI 3.
 
@@ -126,14 +135,14 @@
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW270_DEG
+#define GYRO_MPU6500_ALIGN CW0_DEG
 
 //#define USE_FAKE_GYRO
 
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW180_DEG
+#define ACC_MPU6500_ALIGN CW0_DEG
 
 // MPU6500 interrupt
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
