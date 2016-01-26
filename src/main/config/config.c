@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 118;
+static const uint8_t EEPROM_CONF_VERSION = 119;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -168,8 +168,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P8[PIDNAVR] = 25; // NAV_P * 10;
     pidProfile->I8[PIDNAVR] = 33; // NAV_I * 100;
     pidProfile->D8[PIDNAVR] = 83; // NAV_D * 1000;
-    pidProfile->P8[PIDLEVEL] = 50;
-    pidProfile->I8[PIDLEVEL] = 50;
+    pidProfile->P8[PIDLEVEL] = 55;
+    pidProfile->I8[PIDLEVEL] = 55;
     pidProfile->D8[PIDLEVEL] = 100;
     pidProfile->P8[PIDMAG] = 40;
     pidProfile->P8[PIDVEL] = 120;
@@ -177,7 +177,8 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D8[PIDVEL] = 1;
 
     pidProfile->gyro_lpf_hz = 60;    // filtering ON by default
-    pidProfile->dterm_lpf_hz = 50;   // filtering ON by default
+    pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
+    pidProfile->deltaFromGyro = 1;
     pidProfile->airModeInsaneAcrobilityFactor = 0;
 
     pidProfile->P_f[ROLL] = 1.1f;
@@ -188,7 +189,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->D_f[PITCH] = 0.01f;
     pidProfile->P_f[YAW] = 4.0f;
     pidProfile->I_f[YAW] = 0.4f;
-    pidProfile->D_f[YAW] = 0.01f;
+    pidProfile->D_f[YAW] = 0.00f;
     pidProfile->A_level = 6.0f;
     pidProfile->H_level = 6.0f;
     pidProfile->H_sensitivity = 75;
