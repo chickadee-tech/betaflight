@@ -135,19 +135,27 @@
 #define GYRO
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
-#define GYRO_MPU6500_ALIGN CW0_DEG
+#ifdef V3_BOARD
+  #define GYRO_MPU6500_ALIGN CW180_DEG
+#else
+  #define GYRO_MPU6500_ALIGN CW0_DEG
+#endif
 
 //#define USE_FAKE_GYRO
 
 #define ACC
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
-#define ACC_MPU6500_ALIGN CW0_DEG
+#ifdef V3_BOARD
+  #define ACC_MPU6500_ALIGN CW180_DEG
+#else
+  #define ACC_MPU6500_ALIGN CW0_DEG
+#endif
 
 // MPU6500 interrupt
 //#define DEBUG_MPU_DATA_READY_INTERRUPT
 #define USE_MPU_DATA_READY_SIGNAL
-//#define ENSURE_MPU_DATA_READY_IS_LOW
+#define ENSURE_MPU_DATA_READY_IS_LOW
 
 // TODO(tannewt): Insert baro defines here.
 // TODO(tannewt): Insert mag defines here.

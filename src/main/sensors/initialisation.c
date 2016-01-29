@@ -169,27 +169,39 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #endif
 
 #if defined(CKD_F3FC)
-#ifdef DEBUG_BOARD
+  #ifdef V3_BOARD
+    #ifdef DEBUG_BOARD
+      static const extiConfig_t chickadeeF3FCMPUIntExtiConfig = {
+              .gpioAHBPeripherals = RCC_AHBPeriph_GPIOE,
+              .gpioPort = GPIOE,
+              .gpioPin = Pin_5,
+              .exti_port_source = EXTI_PortSourceGPIOE,
+              .exti_pin_source = EXTI_PinSource5,
+              .exti_line = EXTI_Line5,
+              .exti_irqn = EXTI9_5_IRQn
+      };
+    #else
+      static const extiConfig_t chickadeeF3FCMPUIntExtiConfig = {
+              .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
+              .gpioPort = GPIOA,
+              .gpioPin = Pin_13,
+              .exti_port_source = EXTI_PortSourceGPIOA,
+              .exti_pin_source = EXTI_PinSource13,
+              .exti_line = EXTI_Line13,
+              .exti_irqn = EXTI15_10_IRQn
+      };
+    #endif  // DEBUG_BOARD
+  #else
     static const extiConfig_t chickadeeF3FCMPUIntExtiConfig = {
-            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOE,
-            .gpioPort = GPIOE,
-            .gpioPin = Pin_5,
-            .exti_port_source = EXTI_PortSourceGPIOE,
-            .exti_pin_source = EXTI_PinSource5,
-            .exti_line = EXTI_Line5,
-            .exti_irqn = EXTI9_5_IRQn
+            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOB,
+            .gpioPort = GPIOB,
+            .gpioPin = Pin_0,
+            .exti_port_source = EXTI_PortSourceGPIOB,
+            .exti_pin_source = EXTI_PinSource0,
+            .exti_line = EXTI_Line0,
+            .exti_irqn = EXTI0_IRQn
     };
-#else
-    static const extiConfig_t chickadeeF3FCMPUIntExtiConfig = {
-            .gpioAHBPeripherals = RCC_AHBPeriph_GPIOA,
-            .gpioPort = GPIOA,
-            .gpioPin = Pin_13,
-            .exti_port_source = EXTI_PortSourceGPIOA,
-            .exti_pin_source = EXTI_PinSource13,
-            .exti_line = EXTI_Line13,
-            .exti_irqn = EXTI15_10_IRQn
-    };
-#endif  // DEBUG_BOARD
+  #endif // V3_BOARD
     return &chickadeeF3FCMPUIntExtiConfig;
 #endif
 

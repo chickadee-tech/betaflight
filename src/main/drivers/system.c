@@ -97,6 +97,13 @@ void EXTI9_5_IRQHandler(void)
 }
 #endif
 
+#if defined(CKD_F3FC)
+void EXTI0_IRQHandler(void)
+{
+    extiHandler(EXTI0_IRQn);
+}
+#endif
+
 // cycles per microsecond
 static uint32_t usTicks = 0;
 // current uptime for 1kHz systick timer. will rollover after 49 days. hopefully we won't care.
