@@ -134,7 +134,7 @@ static uint32_t activeFeaturesLatch = 0;
 static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
-static const uint8_t EEPROM_CONF_VERSION = 119;
+static const uint8_t EEPROM_CONF_VERSION = 120;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -176,7 +176,6 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->I8[PIDVEL] = 45;
     pidProfile->D8[PIDVEL] = 1;
 
-    pidProfile->gyro_lpf_hz = 60;    // filtering ON by default
     pidProfile->dterm_lpf_hz = 0;    // filtering ON by default
     pidProfile->deltaFromGyro = 1;
     pidProfile->airModeInsaneAcrobilityFactor = 0;
@@ -300,7 +299,7 @@ void resetSerialConfig(serialConfig_t *serialConfig)
 
     serialConfig->portConfigs[0].functionMask = FUNCTION_MSP;
 
-#ifdef CC3D
+#if defined(USE_VCP)
     // This allows MSP connection via USART & VCP so the board can be reconfigured.
     serialConfig->portConfigs[1].functionMask = FUNCTION_MSP;
 #endif
@@ -335,7 +334,7 @@ void resetMixerConfig(mixerConfig_t *mixerConfig) {
     mixerConfig->yaw_jump_prevention_limit = 200;
 #ifdef USE_SERVOS
     mixerConfig->tri_unarmed_servo = 1;
-    mixerConfig->servo_lowpass_freq = 400;
+    mixerConfig->servo_lowpass_freq = 400.0f;
     mixerConfig->servo_lowpass_enable = 0;
 #endif
 }
@@ -384,9 +383,13 @@ static void resetConf(void)
     masterConfig.version = EEPROM_CONF_VERSION;
     masterConfig.mixerMode = MIXER_QUADX;
     featureClearAll();
-#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(CKD_F3FC)
+#if defined(CJMCU) || defined(SPARKY) || defined(COLIBRI_RACE) || defined(MOTOLAB) || defined(SPRACINGF3MINI) || defined(CKD_F3FC)
     featureSet(FEATURE_RX_PPM);
 #endif
+
+//#if defined(SPRACINGF3MINI)
+//    featureSet(FEATURE_DISPLAY);
+//#endif
 
 #ifdef BOARD_HAS_VOLTAGE_DIVIDER
     // only enable the VBAT feature by default if the board has a voltage divider otherwise
@@ -402,6 +405,7 @@ static void resetConf(void)
     masterConfig.dcm_kp = 2500;                // 1.0 * 10000
     masterConfig.dcm_ki = 0;                    // 0.003 * 10000
     masterConfig.gyro_lpf = 1;                 // 188HZ
+    masterConfig.gyro_soft_lpf_hz = 60;
 
     resetAccelerometerTrims(&masterConfig.accZero);
 
@@ -546,13 +550,25 @@ static void resetConf(void)
     applyDefaultLedStripConfig(masterConfig.ledConfigs);
 #endif
 
-#ifdef BLACKBOX
 #ifdef SPRACINGF3
     featureSet(FEATURE_BLACKBOX);
     masterConfig.blackbox_device = 1;
+#ifdef TRANSPONDER
+    static const uint8_t defaultTransponderData[6] = { 0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC }; // Note, this is NOT a valid transponder code, it's just for testing production hardware
+
+    memcpy(masterConfig.transponderData, &defaultTransponderData, sizeof(defaultTransponderData));
+#endif
+
+#if defined(ENABLE_BLACKBOX_LOGGING_ON_SPIFLASH_BY_DEFAULT)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_FLASH;
+#elif defined(ENABLE_BLACKBOX_LOGGING_ON_SDCARD_BY_DEFAULT)
+    featureSet(FEATURE_BLACKBOX);
+    masterConfig.blackbox_device = BLACKBOX_DEVICE_SDCARD;
 #else
     masterConfig.blackbox_device = 0;
 #endif
+
     masterConfig.blackbox_rate_num = 1;
     masterConfig.blackbox_rate_denom = 1;
 #endif
@@ -561,17 +577,37 @@ static void resetConf(void)
 #if defined(COLIBRI_RACE)
     currentProfile->pidProfile.pidController = 1;
 
-    masterConfig.rxConfig.rcmap[0] = 1;
-    masterConfig.rxConfig.rcmap[1] = 2;
-    masterConfig.rxConfig.rcmap[2] = 3;
-    masterConfig.rxConfig.rcmap[3] = 0;
-    masterConfig.rxConfig.rcmap[4] = 4;
-    masterConfig.rxConfig.rcmap[5] = 5;
-    masterConfig.rxConfig.rcmap[6] = 6;
-    masterConfig.rxConfig.rcmap[7] = 7;
-
     masterConfig.rxConfig.rcSmoothing = 0;
-    currentProfile->pidProfile.pidController = 2;
+
+    currentControlRateProfile->rcRate8 = 100;
+    currentControlRateProfile->rcExpo8 = 70;
+    currentControlRateProfile->rcYawExpo8 = 70;
+    currentControlRateProfile->thrMid8 = 50;
+    currentControlRateProfile->thrExpo8 = 0;
+    currentControlRateProfile->rates[FD_ROLL] = 90;
+    currentControlRateProfile->rates[FD_PITCH] = 90;
+    currentControlRateProfile->rates[FD_YAW] = 90;
+    currentControlRateProfile->dynThrPID = 30;
+    currentControlRateProfile->tpa_breakpoint = 1500;
+    currentProfile->rcControlsConfig.deadband = 10;
+
+    masterConfig.escAndServoConfig.minthrottle = 1025;
+    masterConfig.escAndServoConfig.maxthrottle = 1980;
+    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
+    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+
+    currentProfile->pidProfile.P8[ROLL] = 31;     // new PID with preliminary defaults test carefully
+    currentProfile->pidProfile.I8[ROLL] = 42;
+    currentProfile->pidProfile.D8[ROLL] = 21;
+    currentProfile->pidProfile.P8[PITCH] = 62;
+    currentProfile->pidProfile.I8[PITCH] = 74;
+    currentProfile->pidProfile.D8[PITCH] = 23;
+    currentProfile->pidProfile.P8[YAW] = 100;
+    currentProfile->pidProfile.I8[YAW] = 45;
+    currentProfile->pidProfile.D8[YAW] = 15;
+    currentProfile->pidProfile.P8[PIDLEVEL] = 60;
+    currentProfile->pidProfile.I8[PIDLEVEL] = 60;
+    currentProfile->pidProfile.D8[PIDLEVEL] = 100;
 
     currentProfile->pidProfile.P_f[ROLL] = 0.7f;     // new PID with preliminary defaults test carefully
     currentProfile->pidProfile.I_f[ROLL] = 0.4f;
@@ -583,22 +619,8 @@ static void resetConf(void)
     currentProfile->pidProfile.I_f[YAW] = 0.9f;
     currentProfile->pidProfile.D_f[YAW] = 0.01f;
 
-    masterConfig.controlRateProfiles[0].rcRate8 = 100;
-    masterConfig.controlRateProfiles[0].rcExpo8 = 70;
-    masterConfig.controlRateProfiles[0].rcYawExpo8 = 70;
-    masterConfig.controlRateProfiles[0].thrMid8 = 50;
-    masterConfig.controlRateProfiles[0].thrExpo8 = 0;
-    masterConfig.controlRateProfiles[0].rates[FD_ROLL] = 90;
-    masterConfig.controlRateProfiles[0].rates[FD_PITCH] = 90;
-    masterConfig.controlRateProfiles[0].rates[FD_YAW] = 90;
-    masterConfig.controlRateProfiles[0].dynThrPID = 30;
-    masterConfig.controlRateProfiles[0].tpa_breakpoint = 1500;
-    masterConfig.profile[0].rcControlsConfig.deadband = 10;
-
-    masterConfig.escAndServoConfig.minthrottle = 1025;
-    masterConfig.escAndServoConfig.maxthrottle = 1980;
-    masterConfig.batteryConfig.vbatmaxcellvoltage = 45;
-    masterConfig.batteryConfig.vbatmincellvoltage = 30;
+    masterConfig.failsafeConfig.failsafe_delay = 10;
+    masterConfig.failsafeConfig.failsafe_off_delay = 20;
 
     featureSet(FEATURE_ONESHOT125);
     featureSet(FEATURE_VBAT);
@@ -606,11 +628,12 @@ static void resetConf(void)
     featureSet(FEATURE_FAILSAFE);
 #endif
 
-    // alternative defaults settings for ALIENWIIF1 and ALIENWIIF3 targets
-#ifdef ALIENWII32
+    // alternative defaults settings for ALIENFLIGHTF1 and ALIENFLIGHTF3 targets
+#ifdef ALIENFLIGHT
     featureSet(FEATURE_RX_SERIAL);
     featureSet(FEATURE_MOTOR_STOP);
-#ifdef ALIENWIIF3
+    featureClear(FEATURE_ONESHOT125);
+#ifdef ALIENFLIGHTF3
     masterConfig.serialConfig.portConfigs[2].functionMask = FUNCTION_RX_SERIAL;
     masterConfig.batteryConfig.vbatscale = 20;
 #else
@@ -621,15 +644,13 @@ static void resetConf(void)
     masterConfig.escAndServoConfig.minthrottle = 1000;
     masterConfig.escAndServoConfig.maxthrottle = 2000;
     masterConfig.motor_pwm_rate = 32000;
-    currentProfile->pidProfile.pidController = 3;
-    currentProfile->pidProfile.P8[ROLL] = 36;
-    currentProfile->pidProfile.P8[PITCH] = 36;
+    currentProfile->pidProfile.pidController = 2;
     masterConfig.failsafeConfig.failsafe_delay = 2;
     masterConfig.failsafeConfig.failsafe_off_delay = 0;
-    currentControlRateProfile->rcRate8 = 130;
+    currentControlRateProfile->rcRate8 = 100;
     currentControlRateProfile->rates[FD_PITCH] = 20;
     currentControlRateProfile->rates[FD_ROLL] = 20;
-    currentControlRateProfile->rates[FD_YAW] = 100;
+    currentControlRateProfile->rates[FD_YAW] = 20;
     parseRcChannels("TAER1234", &masterConfig.rxConfig);
 
     //  { 1.0f, -0.414178f,  1.0f, -1.0f },          // REAR_R
@@ -749,7 +770,7 @@ void activateConfig(void)
         &currentProfile->pidProfile
     );
 
-    useGyroConfig(&masterConfig.gyroConfig, currentProfile->pidProfile.gyro_lpf_hz);
+    useGyroConfig(&masterConfig.gyroConfig, masterConfig.gyro_soft_lpf_hz);
 
 #ifdef TELEMETRY
     telemetryUseConfig(&masterConfig.telemetryConfig);

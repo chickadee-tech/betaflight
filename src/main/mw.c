@@ -63,6 +63,9 @@
 #include "io/serial_cli.h"
 #include "io/serial_msp.h"
 #include "io/statusindicator.h"
+#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/transponder_ir.h"
+
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -99,11 +102,6 @@ enum {
 #define IBATINTERVAL (6 * 3500)
 
 #define GYRO_WATCHDOG_DELAY 100 // Watchdog delay for gyro sync
-
-// AIR MODE Reset timers
-#define ERROR_RESET_DEACTIVATE_DELAY (1 * 1000)   // 1 sec delay to disable AIR MODE Iterm resetting
-bool preventItermWindup = false;
-static bool ResetErrorActivated = true;
 
 uint16_t cycleTime = 0;         // this is the number in micro second to achieve a full loop, it can differ a little and is taken into account in the PID loop
 
@@ -186,7 +184,7 @@ void filterRc(void){
 
     /* Initialize cycletime filter */
     if (!filterIsSet) {
-        BiQuadNewLpf(1, &filteredCycleTimeState, 0);
+        BiQuadNewLpf(0.5f, &filteredCycleTimeState, targetLooptime);
         filterIsSet = true;
     }
 
@@ -347,7 +345,7 @@ void mwDisarm(void)
     }
 }
 
-#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_MSP | FUNCTION_TELEMETRY_SMARTPORT)
+#define TELEMETRY_FUNCTION_MASK (FUNCTION_TELEMETRY_FRSKY | FUNCTION_TELEMETRY_HOTT | FUNCTION_TELEMETRY_LTM | FUNCTION_TELEMETRY_SMARTPORT)
 
 void releaseSharedTelemetryPorts(void) {
     serialPort_t *sharedPort = findSharedSerialPort(TELEMETRY_FUNCTION_MASK, FUNCTION_MSP);
@@ -479,40 +477,8 @@ void processRx(void)
 
     throttleStatus_e throttleStatus = calculateThrottleStatus(&masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
 
-    static bool airModeErrorResetIsEnabled = true; // Should always initialize with reset enabled
-    static uint32_t airModeErrorResetTimeout = 0;  // Timeout for both activate and deactivate mode
-
-    if (throttleStatus == THROTTLE_LOW)  {
-        // When in AIR Mode LOW Throttle and reset was already disabled we will only prevent further growing
-        if ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && !airModeErrorResetIsEnabled)  {
-            if (calculateRollPitchCenterStatus(&masterConfig.rxConfig) == CENTERED) {
-                preventItermWindup = true;    // Iterm is now limited to the last value
-            } else {
-                preventItermWindup = false;   // Iterm should considered safe to increase
-            }
-        }
-
-        // Conditions to reset Error
-        if (!ARMING_FLAG(ARMED) || feature(FEATURE_MOTOR_STOP) || ((IS_RC_MODE_ACTIVE(BOXAIRMODE)) && airModeErrorResetIsEnabled) || !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            ResetErrorActivated = true;                                         // As RX code is not executed each loop a flag has to be set for fast looptimes
-            airModeErrorResetTimeout = millis() + ERROR_RESET_DEACTIVATE_DELAY; // Reset de-activate timer
-            airModeErrorResetIsEnabled = true;                                  // Enable Reset again especially after Disarm
-            preventItermWindup = false;                                         // Reset limiting
-        }
-    } else {
-        if (!(feature(FEATURE_MOTOR_STOP)) && ARMING_FLAG(ARMED) && IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            if (airModeErrorResetIsEnabled) {
-                if (millis() > airModeErrorResetTimeout && calculateRollPitchCenterStatus(&masterConfig.rxConfig) == NOT_CENTERED) {  // Only disable error reset when roll and pitch not centered
-                    airModeErrorResetIsEnabled = false;
-                    preventItermWindup = false;  // Reset limiting for Iterm
-                }
-            } else {
-                preventItermWindup = false;      // Reset limiting for Iterm
-            }
-        } else {
-            preventItermWindup = false;          // Reset limiting. Usefull when flipping between normal and AIR mode
-        }
-        ResetErrorActivated = false;             // Disable resetting of error
+    if (throttleStatus == THROTTLE_LOW) {
+        pidResetErrorGyro(&masterConfig.rxConfig);
     }
 
     // When armed and motors aren't spinning, do beeps and then disarm
@@ -720,10 +686,6 @@ void taskMainPidLoop(void)
     }
 #endif
 
-    if (ResetErrorActivated) {
-        pidResetErrorGyro();
-    }
-
     // PID - note this is function pointer set by setPIDController()
     pid_controller(
         &currentProfile->pidProfile,
@@ -744,10 +706,18 @@ void taskMainPidLoop(void)
         writeMotors();
     }
 
+#ifdef USE_SDCARD
+    afatfs_poll();
+#endif
+
 #ifdef BLACKBOX
     if (!cliMode && feature(FEATURE_BLACKBOX)) {
         handleBlackbox();
     }
+#endif
+
+#ifdef TRANSPONDER
+    updateTransponder();
 #endif
 }
 

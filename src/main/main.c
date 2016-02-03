@@ -51,6 +51,9 @@
 #include "drivers/flash_m25p16.h"
 #include "drivers/sonar_hcsr04.h"
 #include "drivers/gyro_sync.h"
+#include "drivers/usb_io.h"
+#include "drivers/transponder_ir.h"
+#include "drivers/sdcard.h"
 
 #include "rx/rx.h"
 
@@ -63,6 +66,8 @@
 #include "io/gimbal.h"
 #include "io/ledstrip.h"
 #include "io/display.h"
+#include "io/asyncfatfs/asyncfatfs.h"
+#include "io/transponder_ir.h"
 
 #include "sensors/sensors.h"
 #include "sensors/sonar.h"
@@ -124,6 +129,8 @@ void ledStripInit(ledConfig_t *ledConfigsToUse, hsvColor_t *colorsToUse);
 void spektrumBind(rxConfig_t *rxConfig);
 const sonarHardware_t *sonarGetHardwareConfiguration(batteryConfig_t *batteryConfig);
 void sonarInit(const sonarHardware_t *sonarHardware);
+void transponderInit(uint8_t* transponderCode);
+//void usbCableDetectInit(void);
 
 #ifdef STM32F303xC
 // from system_stm32f30x.c
@@ -173,16 +180,59 @@ void init(void)
 #endif
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
+    systemInit();
+
 #ifdef USE_HARDWARE_REVISION_DETECTION
     detectHardwareRevision();
 #endif
 
-    systemInit();
-
     // Latch active features to be used for feature() in the remainder of init().
     latchActiveFeatures();
 
-    ledInit();
+#ifdef ALIENFLIGHTF3
+    if (hardwareRevision == AFF3_REV_1) {
+        ledInit(false);
+    } else {
+        ledInit(true);
+    }
+#else
+    ledInit(false);
+#endif
+
+#ifdef SPRACINGF3MINI
+    gpio_config_t buttonAGpioConfig = {
+        BUTTON_A_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BUTTON_A_PORT, &buttonAGpioConfig);
+
+    gpio_config_t buttonBGpioConfig = {
+        BUTTON_B_PIN,
+        Mode_IPU,
+        Speed_2MHz
+    };
+    gpioInit(BUTTON_B_PORT, &buttonBGpioConfig);
+
+    // Check status of bind plug and exit if not active
+    delayMicroseconds(10);  // allow GPIO configuration to settle
+
+    if (!isMPUSoftReset()) {
+        uint8_t secondsRemaining = 5;
+        bool bothButtonsHeld;
+        do {
+            bothButtonsHeld = !digitalIn(BUTTON_A_PORT, BUTTON_A_PIN) && !digitalIn(BUTTON_B_PORT, BUTTON_B_PIN);
+            if (bothButtonsHeld) {
+                if (--secondsRemaining == 0) {
+                    resetEEPROM();
+                    systemReset();
+                }
+                delay(1000);
+                LED0_TOGGLE;
+            }
+        } while (bothButtonsHeld);
+    }
+#endif
 
 #ifdef SPEKTRUM_BIND
     if (feature(FEATURE_RX_SERIAL)) {
@@ -324,6 +374,15 @@ void init(void)
 #ifdef USE_SPI
     spiInit(SPI1);
     spiInit(SPI2);
+#ifdef STM32F303xC
+#ifdef ALIENFLIGHTF3
+    if (hardwareRevision == AFF3_REV_2) {
+        spiInit(SPI3);
+    }
+#else
+    spiInit(SPI3);
+#endif
+#endif
 #endif
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -341,6 +400,12 @@ void init(void)
 #if defined(SPRACINGF3) && defined(SONAR) && defined(USE_SOFTSERIAL2)
     if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
         serialRemovePort(SERIAL_PORT_SOFTSERIAL2);
+    }
+#endif
+
+#if defined(SPRACINGF3MINI) && defined(SONAR) && defined(USE_SOFTSERIAL1)
+    if (feature(FEATURE_SONAR) && feature(FEATURE_SOFTSERIAL)) {
+        serialRemovePort(SERIAL_PORT_SOFTSERIAL1);
     }
 #endif
 
@@ -460,6 +525,22 @@ void init(void)
     }
 #endif
 
+/* TODO - Fix in the future
+#ifdef USB_CABLE_DETECTION
+    usbCableDetectInit();
+#endif
+
+
+#ifdef TRANSPONDER
+    if (feature(FEATURE_TRANSPONDER)) {
+        transponderInit(masterConfig.transponderData);
+        transponderEnable();
+        transponderStartRepeating();
+        systemState |= SYSTEM_STATE_TRANSPONDER_ENABLED;
+    }
+#endif
+*/
+
 #ifdef USE_FLASHFS
 #ifdef NAZE
     if (hardwareRevision == NAZE32_REV5) {
@@ -470,6 +551,27 @@ void init(void)
 #endif
 
     flashfsInit();
+#endif
+
+#ifdef USE_SDCARD
+    bool sdcardUseDMA = false;
+
+    sdcardInsertionDetectInit();
+
+#ifdef SDCARD_DMA_CHANNEL_TX
+
+#if defined(LED_STRIP) && defined(WS2811_DMA_CHANNEL)
+    // Ensure the SPI Tx DMA doesn't overlap with the led strip
+    sdcardUseDMA = !feature(FEATURE_LED_STRIP) || SDCARD_DMA_CHANNEL_TX != WS2811_DMA_CHANNEL;
+#else
+    sdcardUseDMA = true;
+#endif
+
+#endif
+
+    sdcard_init(sdcardUseDMA);
+
+    afatfs_init();
 #endif
 
 #ifdef BLACKBOX

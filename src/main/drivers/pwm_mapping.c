@@ -302,7 +302,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#ifdef COLIBRI_RACE
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
 static const uint16_t multiPPM[] = {
     PWM1  | (MAP_TO_PPM_INPUT << 8),			// PPM input
     PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
@@ -364,7 +364,7 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
-#if defined(SPARKY) || defined(ALIENWIIF3)
+#if defined(SPARKY) || defined(ALIENFLIGHTF3)
 static const uint16_t multiPPM[] = {
     PWM11 | (MAP_TO_PPM_INPUT << 8), // PPM input
 
@@ -587,6 +587,51 @@ static const uint16_t airPWM[] = {
 };
 #endif
 
+#ifdef SPRACINGF3MINI
+static const uint16_t multiPPM[] = {
+    PWM1  | (MAP_TO_PPM_INPUT    << 8), // PPM input
+
+    PWM4  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM5  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM6  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM7  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM8  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM9  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM10 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM11 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM12 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM13 | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM2  | (MAP_TO_MOTOR_OUTPUT << 8),
+    PWM3  | (MAP_TO_MOTOR_OUTPUT << 8),
+    0xFFFF
+};
+
+static const uint16_t multiPWM[] = {
+    0xFFFF
+};
+
+static const uint16_t airPPM[] = {
+    PWM1  | (MAP_TO_PPM_INPUT << 8),     // PPM input
+    PWM4  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #1
+    PWM5  | (MAP_TO_MOTOR_OUTPUT  << 8), // motor #2
+    PWM6  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #1
+    PWM7  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM8  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM9  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM10 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM11 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM12 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM13 | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM2  | (MAP_TO_SERVO_OUTPUT  << 8),
+    PWM3  | (MAP_TO_SERVO_OUTPUT  << 8), // servo #10
+    0xFFFF
+};
+
+static const uint16_t airPWM[] = {
+    0xFFFF
+};
+#endif
+
 static const uint16_t * const hardwareMaps[] = {
     multiPWM,
     multiPPM,
@@ -724,7 +769,7 @@ if (init->useBuzzerP6) {
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
-#if defined(COLIBRI_RACE)
+#if defined(COLIBRI_RACE) || defined(LUX_RACE)
             // remap PWM1+2 as servos
             if ((timerIndex == PWM6 || timerIndex == PWM7 || timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM2)
                 type = MAP_TO_SERVO_OUTPUT;
@@ -745,6 +790,12 @@ if (init->useBuzzerP6) {
 #if defined(SPRACINGF3)
             // remap PWM15+16 as servos
             if ((timerIndex == PWM15 || timerIndex == PWM16) && timerHardwarePtr->tim == TIM15)
+                type = MAP_TO_SERVO_OUTPUT;
+#endif
+
+#if defined(SPRACINGF3MINI)
+            // remap PWM8+9 as servos
+            if ((timerIndex == PWM8 || timerIndex == PWM9) && timerHardwarePtr->tim == TIM15)
                 type = MAP_TO_SERVO_OUTPUT;
 #endif
 
@@ -775,11 +826,15 @@ if (init->useBuzzerP6) {
                 }
             } else
 #endif
+
+#if defined(SPRACINGF3) || defined(NAZE)
                 // remap PWM5..8 as servos when used in extended servo mode
                 if (timerIndex >= PWM5 && timerIndex <= PWM8)
                     type = MAP_TO_SERVO_OUTPUT;
-        }
 #endif
+        }
+
+#endif // USE_SERVOS
 
 #ifdef CC3D
         if (init->useParallelPWM) {

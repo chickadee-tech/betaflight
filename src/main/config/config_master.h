@@ -51,6 +51,7 @@ typedef struct master_t {
     uint8_t acc_hardware;                   // Which acc hardware to use on boards with more than one device
     uint8_t acc_for_fast_looptime;          // shorten acc processing time by using 1 out of 9 samples. For combination with fast looptimes.
     uint8_t gyro_lpf;                      // gyro LPF setting - values are driver specific, in case of invalid number, a reasonable default ~30-40HZ is chosen.
+    float gyro_soft_lpf_hz;                 // Biqyad gyro lpf hz
     uint16_t dcm_kp;                        // DCM filter proportional gain ( x 10000)
     uint16_t dcm_ki;                        // DCM filter integral gain ( x 10000)
 
@@ -91,6 +92,10 @@ typedef struct master_t {
 #ifdef LED_STRIP
     ledConfig_t ledConfigs[MAX_LED_STRIP_LENGTH];
     hsvColor_t colors[CONFIGURABLE_COLOR_COUNT];
+#endif
+
+#ifdef TRANSPONDER
+    uint8_t transponderData[6];
 #endif
 
     profile_t profile[MAX_PROFILE_COUNT];

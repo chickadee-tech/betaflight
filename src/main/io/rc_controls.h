@@ -49,6 +49,7 @@ typedef enum {
     BOXBLACKBOX,
     BOXFAILSAFE,
     BOXAIRMODE,
+	BOXACROPLUS,
     CHECKBOX_ITEM_COUNT
 } boxId_e;
 
@@ -77,7 +78,7 @@ typedef enum {
     THROTTLE_HIGH
 } throttleStatus_e;
 
-#define AIRMODEDEADBAND 10
+#define AIRMODEDEADBAND 12
 
 typedef enum {
     NOT_CENTERED = 0,

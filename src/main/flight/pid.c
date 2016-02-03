@@ -50,7 +50,8 @@
 
 extern float dT;
 extern bool motorLimitReached;
-extern bool preventItermWindup;
+
+#define PREVENT_WINDUP(x,y) { if (ABS(x) > ABS(y)) { if (x < 0) { x = -ABS(y); }  else { x = ABS(y); } } }
 
 int16_t axisPID[3];
 
@@ -63,8 +64,8 @@ int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 // PIDweight is a scale factor for PIDs which is derived from the throttle and TPA setting, and 100 = 100% scale means no PID reduction
 uint8_t PIDweight[3];
 
-static int32_t errorGyroI[3] = { 0, 0, 0 };
-static float errorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
+static int32_t errorGyroI[3], previousErrorGyroI[3];
+static float errorGyroIf[3], previousErrorGyroIf[3];
 
 static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
         uint16_t max_angle_inclination, rollAndPitchTrims_t *angleTrim, rxConfig_t *rxConfig);
@@ -74,33 +75,46 @@ typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig
 
 pidControllerFuncPtr pid_controller = pidRewrite; // which pid controller are we using, defaultMultiWii
 
-void pidResetErrorGyro(void)
+void pidResetErrorGyro(rxConfig_t *rxConfig)
 {
-    errorGyroI[ROLL] = 0;
-    errorGyroI[PITCH] = 0;
-    errorGyroI[YAW] = 0;
+    int axis;
 
-    errorGyroIf[ROLL] = 0.0f;
-    errorGyroIf[PITCH] = 0.0f;
-    errorGyroIf[YAW] = 0.0f;
+    for (axis = 0; axis < 3; axis++) {
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+            int rollPitchStatus = calculateRollPitchCenterStatus(rxConfig);
+            if (rollPitchStatus == CENTERED) {
+                PREVENT_WINDUP(errorGyroI[axis], previousErrorGyroI[axis]);
+                PREVENT_WINDUP(errorGyroIf[axis], previousErrorGyroIf[axis]);
+            }
+        } else {
+            errorGyroI[axis] = 0;
+            errorGyroIf[axis] = 0.0f;
+        }
+    }
 }
 
-void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
+float scaleItermToRcInput(int axis) {
+    float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
+    static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
+
+    if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
+        /* Reset Iterm on high stick inputs. No scaling necessary here */
+        iTermScaler[axis] = 0.0f;
+    } else {
+        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm activity. Perhaps more scaling to looptime needed for consistency */
+        if (iTermScaler[axis] < 1) {
+            iTermScaler[axis] = constrainf(iTermScaler[axis] + 0.001f, 0.0f, 1.0f);
+        } else {
+            iTermScaler[axis] = 1;
+        }
+    }
+    return iTermScaler[axis];
+}
+
+void acroPlusApply(acroPlus_t *axisState, int axis, pidProfile_t *pidProfile) {
     float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
     axisState->wowFactor = 1;
     axisState->factor = 0;
-
-    if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
-        /* Ki scaler axis*/
-        axisState->iTermScaler = 0.0f;
-    } else {
-        /* Prevent rapid windup during acro recoveries */
-        if (axisState->iTermScaler < 1) {
-            axisState->iTermScaler = constrainf(axisState->iTermScaler + 0.001f, 0.0f, 1.0f);
-        } else {
-            axisState->iTermScaler = 1;
-        }
-    }
 
     /* acro plus factor handling */
     if (axis != YAW && pidProfile->airModeInsaneAcrobilityFactor && (!flightModeFlags)) {
@@ -112,7 +126,7 @@ void airModePlus(airModePlus_t *axisState, int axis, pidProfile_t *pidProfile) {
 
 const angle_index_t rcAliasToAngleIndexMap[] = { AI_ROLL, AI_PITCH };
 
-static airModePlus_t airModePlusAxisState[3];
+static acroPlus_t acroPlusState[3];
 static biquad_t deltaBiQuadState[3];
 static bool deltaStateIsSet;
 
@@ -126,10 +140,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
     float delta, deltaSum;
     int axis, deltaCount;
     float horizonLevelStrength = 1;
-    static float previousErrorGyroIf[3] = { 0.0f, 0.0f, 0.0f };
 
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], 0);
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetLooptime);
         deltaStateIsSet = true;
     }
 
@@ -149,9 +162,9 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = 10;
+        uint8_t rate = 30;
         // -----Get the desired angle rate depending on flight mode
-        if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             rate = controlRateConfig->rates[axis];
         }
 
@@ -196,16 +209,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            airModePlus(&airModePlusAxisState[axis], axis, pidProfile);
-            errorGyroIf[axis] *= airModePlusAxisState[axis].iTermScaler;
-        }
-
-        if (preventItermWindup || motorLimitReached) {
-            if (ABS(errorGyroIf[axis]) > ABS(previousErrorGyroIf[axis])) {
-                errorGyroIf[axis] = constrainf(errorGyroIf[axis], -ABS(previousErrorGyroIf[axis]), ABS(previousErrorGyroIf[axis]));
+            errorGyroIf[axis] *= scaleItermToRcInput(axis);
+            if (motorLimitReached) {
+                PREVENT_WINDUP(errorGyroIf[axis], previousErrorGyroIf[axis]);
+            } else {
+                previousErrorGyroIf[axis] = errorGyroIf[axis];
             }
-        } else {
-            previousErrorGyroIf[axis] = errorGyroIf[axis];
         }
 
         // limit maximum integrator value to prevent WindUp - accumulating extreme values when system is saturated.
@@ -221,6 +230,10 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             lastGyroRate[axis] = gyroRate;
         }
 
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta *= (1.0f / dT);
+
         if (deltaStateIsSet) {
             delta = applyBiQuadFilter(delta, &deltaBiQuadState[axis]);
         } else {
@@ -232,17 +245,14 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
             delta = (deltaSum / DELTA_TOTAL_SAMPLES);
         }
 
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta *= (1.0f / dT);
-
         DTerm = constrainf(delta * pidProfile->D_f[axis] * PIDweight[axis] / 100, -300.0f, 300.0f);
 
         // -----calculate total PID output
         axisPID[axis] = constrain(lrintf(PTerm + ITerm + DTerm), -1000, 1000);
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            axisPID[axis] = lrintf(airModePlusAxisState[axis].factor + airModePlusAxisState[axis].wowFactor * axisPID[axis]);
+        if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
+            acroPlusApply(&acroPlusState[axis], axis, pidProfile);
+            axisPID[axis] = acroPlusState[axis].factor + acroPlusState[axis].wowFactor * axisPID[axis];
         }
 
 #ifdef GTUNE
@@ -268,13 +278,13 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
     int32_t PTerm, ITerm, DTerm, delta, deltaSum;
     static int32_t lastError[3] = { 0, 0, 0 };
     static int32_t previousDelta[3][DELTA_TOTAL_SAMPLES];
-    static int32_t previousErrorGyroI[3], lastGyroRate[3];
+    static int32_t lastGyroRate[3];
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
 
     if (!deltaStateIsSet && pidProfile->dterm_lpf_hz) {
-        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], 0);
+        for (axis = 0; axis < 3; axis++) BiQuadNewLpf(pidProfile->dterm_lpf_hz, &deltaBiQuadState[axis], targetLooptime);
         deltaStateIsSet = true;
     }
 
@@ -292,9 +302,9 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = 10;
+        uint8_t rate = 30;
         // -----Get the desired angle rate depending on flight mode
-        if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             rate = controlRateConfig->rates[axis];
         }
 
@@ -345,20 +355,16 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         // I coefficient (I8) moved before integration to make limiting independent from PID settings
         errorGyroI[axis] = constrain(errorGyroI[axis], (int32_t) - GYRO_I_MAX << 13, (int32_t) + GYRO_I_MAX << 13);
 
-        ITerm = errorGyroI[axis] >> 13;
-
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            airModePlus(&airModePlusAxisState[axis], axis, pidProfile);
-            errorGyroI[axis] *= airModePlusAxisState[axis].iTermScaler;
+            errorGyroI[axis] = (int32_t) (errorGyroI[axis] * scaleItermToRcInput(axis));
+            if (motorLimitReached) {
+                PREVENT_WINDUP(errorGyroIf[axis], previousErrorGyroIf[axis]);
+            } else {
+                previousErrorGyroI[axis] = errorGyroI[axis];
+            }
         }
 
-        if (preventItermWindup || motorLimitReached) {
-            if (ABS(errorGyroI[axis]) > ABS(previousErrorGyroI[axis])) {
-                errorGyroI[axis] = constrain(errorGyroI[axis], -ABS(previousErrorGyroI[axis]), ABS(previousErrorGyroI[axis]));
-            }
-        } else {
-            previousErrorGyroI[axis] = errorGyroI[axis];
-        }
+        ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term
         if (!pidProfile->deltaFromGyro) {   // quick and dirty solution for testing
@@ -368,6 +374,10 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
             lastGyroRate[axis] = gyroRate;
         }
+        
+        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
+        // would be scaled by different dt each time. Division by dT fixes that.
+        delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
 
         if (deltaStateIsSet) {
             delta = lrintf(applyBiQuadFilter((float) delta, &deltaBiQuadState[axis])) * 3;  // Keep same scaling as unfiltered delta
@@ -380,17 +390,14 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
             delta = deltaSum;
         }
 
-        // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
-        // would be scaled by different dt each time. Division by dT fixes that.
-        delta = (delta * ((uint16_t) 0xFFFF / ((uint16_t)targetLooptime >> 4))) >> 6;
-
         DTerm = (delta * pidProfile->D8[axis] * PIDweight[axis] / 100) >> 8;
 
         // -----calculate total PID output
         axisPID[axis] = PTerm + ITerm + DTerm;
 
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
-            axisPID[axis] = lrintf(airModePlusAxisState[axis].factor + airModePlusAxisState[axis].wowFactor * axisPID[axis]);
+        if (IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
+            acroPlusApply(&acroPlusState[axis], axis, pidProfile);
+            axisPID[axis] = lrintf(acroPlusState[axis].factor + acroPlusState[axis].wowFactor * axisPID[axis]);
         }
 
 #ifdef GTUNE

@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "rx/rx.h"
 
 #pragma once
 
@@ -59,8 +60,7 @@ typedef struct pidProfile_s {
     uint8_t H_sensitivity;
 
     uint16_t airModeInsaneAcrobilityFactor; // Air mode acrobility factor
-    uint8_t gyro_lpf_hz;                    // Gyro Soft filter in hz
-    uint8_t dterm_lpf_hz;                   // Delta Filter in hz
+    float dterm_lpf_hz;                     // Delta Filter in hz
     uint8_t deltaFromGyro;                  // Alternative delta Calculation
 
 #ifdef GTUNE
@@ -72,15 +72,14 @@ typedef struct pidProfile_s {
 #endif
 } pidProfile_t;
 
-typedef struct airModePlus {
+typedef struct acroPlus_s {
     float factor;
     float wowFactor;
-    float iTermScaler;
-} airModePlus_t;
+} acroPlus_t;
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorGyro(void);
+void pidResetErrorGyro(rxConfig_t *rxConfig);
 

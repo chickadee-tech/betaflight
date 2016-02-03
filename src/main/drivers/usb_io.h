@@ -15,21 +15,10 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * telemetry_MSP.h
- *
- *  Created on: 22 Apr 2014
- *      Author: trey marc
- */
+#pragma once
 
-#ifndef TELEMETRY_MSP_H_
-#define TELEMETRY_MSP_H_
+void usbGenerateDisconnectPulse(void);
 
-void initMSPTelemetry(telemetryConfig_t *initialTelemetryConfig);
-void handleMSPTelemetry(void);
-void checkMSPTelemetryState(void);
-
-void freeMSPTelemetryPort(void);
-void configureMSPTelemetryPort(void);
-
-#endif /* TELEMETRY_MSP_H_ */
+void usbCableDetectDeinit(void);
+void usbCableDetectInit(void);
+bool usbCableIsInserted(void);
