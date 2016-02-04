@@ -110,6 +110,19 @@
 #define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
 //#define LED2_INVERTED
 
+// #ifdef DEBUG_BOARD
+// #define BEEP_GPIO   GPIOE
+// #define BEEP_PIN    Pin_5
+// #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
+// #else
+// #define BEEP_GPIO   GPIOA
+// #define BEEP_PIN    Pin_14
+// #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+// #endif
+// #define BEEPER_INVERTED
+// #define BEEPER
+
+
 #define USE_SPI
 #ifdef V3_BOARD
   #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOB

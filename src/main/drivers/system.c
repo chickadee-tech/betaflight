@@ -244,19 +244,19 @@ void failureMode(failureMode_e mode)
 
     while (codeRepeatsRemaining--) {
         LED1_ON;
-        LED0_OFF;
+        //LED0_OFF;
         shortFlashesRemaining = 5;
         codeFlashesRemaining = mode + 1;
         uint8_t flashDuration = SHORT_FLASH_DURATION;
 
         while (shortFlashesRemaining || codeFlashesRemaining) {
             LED1_TOGGLE;
-            LED0_TOGGLE;
+            //LED0_TOGGLE;
             BEEP_ON;
             delay(flashDuration);
 
             LED1_TOGGLE;
-            LED0_TOGGLE;
+            //LED0_TOGGLE;
             BEEP_OFF;
             delay(flashDuration);
 

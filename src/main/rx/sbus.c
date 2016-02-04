@@ -27,6 +27,7 @@
 
 #include "drivers/gpio.h"
 #include "drivers/inverter.h"
+#include "drivers/light_led.h"
 
 #include "drivers/serial.h"
 #include "drivers/serial_uart.h"
@@ -67,7 +68,8 @@ static uint16_t sbusStateFlags = 0;
 #define SBUS_FRAME_BEGIN_BYTE 0x0F
 
 #define SBUS_BAUDRATE 100000
-#define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN | SERIAL_INVERTED)
+//#define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN | SERIAL_INVERTED)
+#define SBUS_PORT_OPTIONS (SERIAL_STOPBITS_2 | SERIAL_PARITY_EVEN)
 
 #define SBUS_DIGITAL_CHANNEL_MIN 173
 #define SBUS_DIGITAL_CHANNEL_MAX 1812
@@ -177,6 +179,7 @@ uint8_t sbusFrameStatus(void)
     if (!sbusFrameDone) {
         return SERIAL_RX_FRAME_PENDING;
     }
+    LED2_TOGGLE;
     sbusFrameDone = false;
 
 #ifdef DEBUG_SBUS_PACKETS

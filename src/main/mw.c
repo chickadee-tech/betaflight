@@ -312,17 +312,17 @@ void annexCode(void)
         }
 
         if (isCalibrating() || (averageWaitingTasks100 > 100)) {
-            warningLedFlash();
+            //warningLedFlash();
             DISABLE_ARMING_FLAG(OK_TO_ARM);
         } else {
             if (ARMING_FLAG(OK_TO_ARM)) {
-                warningLedDisable();
+                //warningLedDisable();
             } else {
-                warningLedFlash();
+                //warningLedFlash();
             }
         }
 
-        warningLedUpdate();
+        //warningLedUpdate();
     }
 
     // Read out gyro temperature. can use it for something somewhere. maybe get MCU temperature instead? lots of fun possibilities.
@@ -563,9 +563,9 @@ void processRx(void)
     }
 
     if (FLIGHT_MODE(ANGLE_MODE) || FLIGHT_MODE(HORIZON_MODE)) {
-        LED1_ON;
+        //LED1_ON;
     } else {
-        LED1_OFF;
+        //LED1_OFF;
     }
 
 #ifdef  MAG
