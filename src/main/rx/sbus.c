@@ -95,7 +95,7 @@ bool sbusInit(rxConfig_t *rxConfig, rxRuntimeConfig_t *rxRuntimeConfig, rcReadRa
     }
 
     serialPort_t *sBusPort = openSerialPort(portConfig->identifier, FUNCTION_RX_SERIAL, sbusDataReceive, SBUS_BAUDRATE, MODE_RX, SBUS_PORT_OPTIONS);
-
+    LED2_OFF;
     return sBusPort != NULL;
 }
 
@@ -156,6 +156,7 @@ static void sbusDataReceive(uint16_t c)
 
     if (sbusFramePosition == 0) {
         if (c != SBUS_FRAME_BEGIN_BYTE) {
+      LED2_ON;
             return;
         }
         sbusFrameStartAt = now;
@@ -179,7 +180,6 @@ uint8_t sbusFrameStatus(void)
     if (!sbusFrameDone) {
         return SERIAL_RX_FRAME_PENDING;
     }
-    LED2_TOGGLE;
     sbusFrameDone = false;
 
 #ifdef DEBUG_SBUS_PACKETS
