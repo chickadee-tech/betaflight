@@ -315,12 +315,14 @@ void annexCode(void)
 
         if (isCalibrating() || (averageSystemLoadPercent > 100)) {
             //warningLedFlash();
+            LED2_ON;
             DISABLE_ARMING_FLAG(OK_TO_ARM);
         } else {
+            LED2_OFF;
             if (ARMING_FLAG(OK_TO_ARM)) {
-                //warningLedDisable();
+                LED1_OFF;
             } else {
-                //warningLedFlash();
+                LED1_ON;
             }
         }
 
