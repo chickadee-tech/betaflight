@@ -21,7 +21,6 @@
 #define GYRO_I_MAX 256                      // Gyro I limiter
 #define YAW_P_LIMIT_MIN 100                 // Maximum value for yaw P limiter
 #define YAW_P_LIMIT_MAX 500                 // Maximum value for yaw P limiter
-#define IS_POSITIVE(x) ((x > 0) ? true : false)
 
 typedef enum {
     PIDROLL,
@@ -79,7 +78,8 @@ typedef struct acroPlus_s {
 
 extern int16_t axisPID[XYZ_AXIS_COUNT];
 extern int32_t axisPID_P[3], axisPID_I[3], axisPID_D[3];
+bool antiWindupProtection;
 
 void pidSetController(pidControllerType_e type);
-void pidResetErrorGyro(rxConfig_t *rxConfig);
+void pidResetErrorGyro(void);
 
