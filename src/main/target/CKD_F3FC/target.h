@@ -186,12 +186,12 @@
 // TODO(tannewt): Support softserial if needed.
 #define SERIAL_PORT_COUNT 4
 
-#define UART1_TX_PIN        GPIO_Pin_8 // PD8
-#define UART1_RX_PIN        GPIO_Pin_9 // PD9
-#define UART1_GPIO          GPIOD
+#define UART1_TX_PIN        GPIO_Pin_0 // PE0
+#define UART1_RX_PIN        GPIO_Pin_1 // PE1
 #define UART1_GPIO_AF       GPIO_AF_7
-#define UART1_TX_PINSOURCE  GPIO_PinSource8
-#define UART1_RX_PINSOURCE  GPIO_PinSource9
+#define UART1_GPIO          GPIOE
+#define UART1_TX_PINSOURCE  GPIO_PinSource0
+#define UART1_RX_PINSOURCE  GPIO_PinSource1
 
 #define UART2_TX_PIN        GPIO_Pin_5 // PD5
 #define UART2_RX_PIN        GPIO_Pin_6 // PD6
@@ -200,12 +200,12 @@
 #define UART2_TX_PINSOURCE  GPIO_PinSource5
 #define UART2_RX_PINSOURCE  GPIO_PinSource6
 
-#define UART3_TX_PIN        GPIO_Pin_0 // PE0
-#define UART3_RX_PIN        GPIO_Pin_1 // PE1
+#define UART3_TX_PIN        GPIO_Pin_8 // PD8
+#define UART3_RX_PIN        GPIO_Pin_9 // PD9
+#define UART3_GPIO          GPIOD
 #define UART3_GPIO_AF       GPIO_AF_7
-#define UART3_GPIO          GPIOE
-#define UART3_TX_PINSOURCE  GPIO_PinSource0
-#define UART3_RX_PINSOURCE  GPIO_PinSource1
+#define UART3_TX_PINSOURCE  GPIO_PinSource8
+#define UART3_RX_PINSOURCE  GPIO_PinSource9
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_2)
