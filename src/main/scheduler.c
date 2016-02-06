@@ -25,6 +25,8 @@
 
 #include "common/maths.h"
 
+#include "drivers/gpio.h"
+#include "drivers/light_led.h"
 #include "drivers/system.h"
 
 //#define SCHEDULER_DEBUG
@@ -235,6 +237,7 @@ void taskSystem(void)
 
     /* Calculate system load */
     if (totalWaitingTasksSamples > 0) {
+        //LED1_TOGGLE;
         averageSystemLoadPercent = 100 * totalWaitingTasks / totalWaitingTasksSamples;
         totalWaitingTasksSamples = 0;
         totalWaitingTasks = 0;
@@ -302,6 +305,7 @@ uint32_t getTaskDeltaTime(cfTaskId_e taskId)
 
 void scheduler(void)
 {
+    //LED1_TOGGLE;
     uint8_t taskId;
     uint8_t selectedTaskId;
     uint8_t selectedTaskDynPrio;

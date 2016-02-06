@@ -241,7 +241,7 @@ void beeper(beeperMode_e mode)
 
     currentBeeperEntry = selectedCandidate;
     if (currentBeeperEntry->mode == BEEPER_RX_LOST) {
-      LED1_ON;
+      //LED1_ON;
     } else {
       //LED2_ON;
     }
@@ -370,7 +370,7 @@ static void beeperProcessCommand(void)
         beeperPos = 0;
     } else if (currentBeeperEntry->sequence[beeperPos] == BEEPER_COMMAND_STOP) {
         beeperSilence();
-        LED1_OFF;
+        //LED1_OFF;
         //LED2_OFF;
     } else {
         // Otherwise advance the sequence and calculate next toggle time
