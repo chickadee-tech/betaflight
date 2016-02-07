@@ -740,7 +740,7 @@ void taskMainPidLoop(void)
 
 // Function for loop trigger
 void taskMainPidLoopCheck(void) {
-    LED1_ON;
+    //LED1_ON;
     // getTaskDeltaTime() returns delta time freezed at the moment of entering the scheduler. currentTime is freezed at the very same point.
     // To make busy-waiting timeout work we need to account for time spent within busy-waiting loop
     uint32_t currentDeltaTime = getTaskDeltaTime(TASK_SELF);
@@ -752,7 +752,7 @@ void taskMainPidLoopCheck(void) {
     }
 
     taskMainPidLoop();
-    LED1_OFF;
+    //LED1_OFF;
 }
 
 void taskUpdateAccelerometer(void)
