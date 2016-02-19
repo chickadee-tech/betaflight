@@ -294,12 +294,12 @@ COMMON_SRC = build_config.c \
 		   flight/pid.c \
 		   flight/imu.c \
 		   flight/mixer.c \
-		   flight/lowpass.c \
 		   drivers/bus_i2c_soft.c \
 		   drivers/serial.c \
 		   drivers/sound_beeper.c \
 		   drivers/system.c \
 		   drivers/gyro_sync.c \
+		   drivers/dma.c \
 		   drivers/buf_writer.c \
 		   io/beeper.c \
 		   io/rc_controls.c \
@@ -318,6 +318,7 @@ COMMON_SRC = build_config.c \
 		   rx/spektrum.c \
 		   rx/xbus.c \
 		   rx/ibus.c \
+           rx/jetiexbus.c \
 		   sensors/acceleration.c \
 		   sensors/battery.c \
 		   sensors/boardalignment.c \
@@ -595,7 +596,6 @@ COLIBRI_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
 		   io/i2c_bst.c \
 		   drivers/bus_bst_stm32f30x.c \
-		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
@@ -613,15 +613,10 @@ COLIBRI_RACE_SRC = \
 
 LUX_RACE_SRC = \
 		   $(STM32F30x_COMMON_SRC) \
-		   drivers/display_ug2864hsweg01.c \
 		   drivers/accgyro_mpu.c \
 		   drivers/accgyro_mpu6500.c \
 		   drivers/accgyro_spi_mpu6500.c \
 		   drivers/accgyro_mpu6500.c \
-		   drivers/barometer_ms5611.c \
-		   drivers/compass_ak8975.c \
-		   drivers/compass_hmc5883l.c \
-		   drivers/display_ug2864hsweg01.c \
 		   drivers/light_ws2811strip.c \
 		   drivers/light_ws2811strip_stm32f30x.c \
 		   drivers/serial_usb_vcp.c \

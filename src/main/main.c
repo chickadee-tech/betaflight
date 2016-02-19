@@ -455,7 +455,7 @@ void init(void)
     }
 #endif
 
-    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, masterConfig.mag_declination, masterConfig.gyro_lpf)) {
+    if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,masterConfig.acc_hardware, masterConfig.mag_hardware, masterConfig.baro_hardware, masterConfig.mag_declination, masterConfig.gyro_lpf, masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
     }
@@ -691,6 +691,8 @@ int main(void) {
 #endif
 #ifdef TELEMETRY
     setTaskEnabled(TASK_TELEMETRY, feature(FEATURE_TELEMETRY));
+    // Reschedule telemetry to 500hz for Jeti Exbus
+    if (feature(FEATURE_TELEMETRY) || masterConfig.rxConfig.serialrx_provider == SERIALRX_JETIEXBUS) rescheduleTask(TASK_TELEMETRY, 2000);
 #endif
 #ifdef LED_STRIP
     setTaskEnabled(TASK_LEDSTRIP, feature(FEATURE_LED_STRIP));

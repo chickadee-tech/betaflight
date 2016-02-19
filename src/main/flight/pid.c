@@ -85,18 +85,22 @@ void pidResetErrorGyro(void)
 float scaleItermToRcInput(int axis) {
     float rcCommandReflection = (float)rcCommand[axis] / 500.0f;
     static float iTermScaler[3] = {1.0f, 1.0f, 1.0f};
+    static float antiWindUpIncrement = 0;
+
+    if (!antiWindUpIncrement) antiWindUpIncrement = (0.001 / 500) * targetLooptime;  // Calculate increment for 500ms period
 
     if (ABS(rcCommandReflection) > 0.7f && (!flightModeFlags)) {   /* scaling should not happen in level modes */
         /* Reset Iterm on high stick inputs. No scaling necessary here */
         iTermScaler[axis] = 0.0f;
     } else {
-        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm activity. Perhaps more scaling to looptime needed for consistency */
+        /* Prevent rapid windup during acro recoveries. Slowly enable Iterm for period of 500ms  */
         if (iTermScaler[axis] < 1) {
-            iTermScaler[axis] = constrainf(iTermScaler[axis] + 0.001f, 0.0f, 1.0f);
+            iTermScaler[axis] = constrainf(iTermScaler[axis] + antiWindUpIncrement, 0.0f, 1.0f);
         } else {
             iTermScaler[axis] = 1;
         }
     }
+
     return iTermScaler[axis];
 }
 
@@ -124,7 +128,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
 {
     float RateError, AngleRate, gyroRate;
     float ITerm,PTerm,DTerm;
-    static float lastError[3], lastGyroRate[3];
+    static float lastErrorForDelta[3];
     static float previousDelta[3][DELTA_TOTAL_SAMPLES];
     float delta, deltaSum;
     int axis, deltaCount;
@@ -198,7 +202,7 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         errorGyroIf[axis] = constrainf(errorGyroIf[axis] + RateError * dT * pidProfile->I_f[axis] * 10, -250.0f, 250.0f);
 
         if (IS_RC_MODE_ACTIVE(BOXAIRMODE) || IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
-            errorGyroIf[axis] = (int32_t) (errorGyroIf[axis] * scaleItermToRcInput(axis));
+            errorGyroIf[axis] *= scaleItermToRcInput(axis);
             if (antiWindupProtection || motorLimitReached) {
                 errorGyroIf[axis] = constrainf(errorGyroIf[axis], -errorGyroIfLimit[axis], errorGyroIfLimit[axis]);
             } else {
@@ -211,12 +215,12 @@ static void pidLuxFloat(pidProfile_t *pidProfile, controlRateConfig_t *controlRa
         ITerm = errorGyroIf[axis];
 
         //-----calculate D-term
-        if (!pidProfile->deltaFromGyro) {
-            delta = RateError - lastError[axis];
-            lastError[axis] = RateError;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis];
+            lastErrorForDelta[axis] = RateError;
         } else {
-            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastGyroRate[axis] = gyroRate;
+            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastErrorForDelta[axis] = gyroRate;
         }
 
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference
@@ -265,9 +269,8 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     int axis, deltaCount;
     int32_t PTerm, ITerm, DTerm, delta, deltaSum;
-    static int32_t lastError[3] = { 0, 0, 0 };
+    static int32_t lastErrorForDelta[3] = { 0, 0, 0 };
     static int32_t previousDelta[3][DELTA_TOTAL_SAMPLES];
-    static int32_t lastGyroRate[3];
     int32_t AngleRateTmp, RateError, gyroRate;
 
     int8_t horizonLevelStrength = 100;
@@ -291,7 +294,7 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
 
     // ----------PID controller----------
     for (axis = 0; axis < 3; axis++) {
-        uint8_t rate = 30;
+        uint8_t rate = 40;
         // -----Get the desired angle rate depending on flight mode
         if (axis == YAW || !pidProfile->airModeInsaneAcrobilityFactor || !IS_RC_MODE_ACTIVE(BOXACROPLUS)) {
             rate = controlRateConfig->rates[axis];
@@ -356,12 +359,12 @@ static void pidRewrite(pidProfile_t *pidProfile, controlRateConfig_t *controlRat
         ITerm = errorGyroI[axis] >> 13;
 
         //-----calculate D-term
-        if (!pidProfile->deltaFromGyro) {   // quick and dirty solution for testing
-            delta = RateError - lastError[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastError[axis] = RateError;
+        if (pidProfile->deltaMethod == DELTA_FROM_ERROR) {
+            delta = RateError - lastErrorForDelta[axis]; // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastErrorForDelta[axis] = RateError;
         } else {
-            delta = -(gyroRate - lastGyroRate[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
-            lastGyroRate[axis] = gyroRate;
+            delta = -(gyroRate - lastErrorForDelta[axis]);  // 16 bits is ok here, the dif between 2 consecutive gyro reads is limited to 800
+            lastErrorForDelta[axis] = gyroRate;
         }
         
         // Correct difference by cycle time. Cycle time is jittery (can be different 2 times), so calculated difference

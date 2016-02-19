@@ -361,7 +361,8 @@ static const char * const lookupTableSerialRX[] = {
     "SUMH",
     "XB-B",
     "XB-B-RJ01",
-    "IBUS"
+    "IBUS",
+    "JETIEXBUS"
 };
 
 static const char * const lookupTableGyroLpf[] = {
@@ -400,6 +401,10 @@ static const char * const lookupTableMagHardware[] = {
     "AK8963"
 };
 
+static const char * const lookupDeltaMethod[] = {
+    "ERROR", "MEASUREMENT"
+};
+
 typedef struct lookupTableEntry_s {
     const char * const *values;
     const uint8_t valueCount;
@@ -424,6 +429,7 @@ typedef enum {
     TABLE_ACC_HARDWARE,
     TABLE_BARO_HARDWARE,
     TABLE_MAG_HARDWARE,
+    TABLE_DELTA_METHOD,
 } lookupTableIndex_e;
 
 static const lookupTableEntry_t lookupTables[] = {
@@ -434,7 +440,9 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableGPSProvider, sizeof(lookupTableGPSProvider) / sizeof(char *) },
     { lookupTableGPSSBASMode, sizeof(lookupTableGPSSBASMode) / sizeof(char *) },
 #endif
+#ifdef BLACKBOX
     { lookupTableBlackboxDevice, sizeof(lookupTableBlackboxDevice) / sizeof(char *) },
+#endif
     { lookupTableCurrentSensor, sizeof(lookupTableCurrentSensor) / sizeof(char *) },
     { lookupTableGimbalMode, sizeof(lookupTableGimbalMode) / sizeof(char *) },
     { lookupTablePidController, sizeof(lookupTablePidController) / sizeof(char *) },
@@ -442,7 +450,8 @@ static const lookupTableEntry_t lookupTables[] = {
     { lookupTableGyroLpf, sizeof(lookupTableGyroLpf) / sizeof(char *) },
     { lookupTableAccHardware, sizeof(lookupTableAccHardware) / sizeof(char *) },
     { lookupTableBaroHardware, sizeof(lookupTableBaroHardware) / sizeof(char *) },
-    { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) }
+    { lookupTableMagHardware, sizeof(lookupTableMagHardware) / sizeof(char *) },
+    { lookupDeltaMethod, sizeof(lookupDeltaMethod) / sizeof(char *) }
 };
 
 #define VALUE_TYPE_OFFSET 0
@@ -581,6 +590,7 @@ const clivalue_t valueTable[] = {
     { "vbat_max_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmaxcellvoltage, .config.minmax = { 10,  50 } },
     { "vbat_min_cell_voltage",      VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatmincellvoltage, .config.minmax = { 10,  50 } },
     { "vbat_warning_cell_voltage",  VAR_UINT8  | MASTER_VALUE,  &masterConfig.batteryConfig.vbatwarningcellvoltage, .config.minmax = { 10,  50 } },
+    { "vbat_pid_compensation",      VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.vbatPidCompensation, .config.lookup = { TABLE_OFF_ON } },
     { "current_meter_scale",        VAR_INT16  | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterScale, .config.minmax = { -10000,  10000 } },
     { "current_meter_offset",       VAR_UINT16 | MASTER_VALUE,  &masterConfig.batteryConfig.currentMeterOffset, .config.minmax = { 0,  3300 } },
     { "multiwii_current_meter_output", VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.batteryConfig.multiwiiCurrentMeterOutput, .config.lookup = { TABLE_OFF_ON } },
@@ -597,6 +607,7 @@ const clivalue_t valueTable[] = {
     { "max_angle_inclination",      VAR_UINT16 | MASTER_VALUE,  &masterConfig.max_angle_inclination, .config.minmax = { 100,  900 } },
 
     { "gyro_lpf",                   VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.gyro_lpf, .config.lookup = { TABLE_GYRO_LPF } },
+    { "gyro_sync_denom",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyro_sync_denom, .config.minmax = { 1,  8 } },
     { "gyro_soft_lpf",              VAR_FLOAT  | MASTER_VALUE,  &masterConfig.gyro_soft_lpf_hz, .config.minmax = { 0,  500 } },
     { "moron_threshold",            VAR_UINT8  | MASTER_VALUE,  &masterConfig.gyroConfig.gyroMovementCalibrationThreshold, .config.minmax = { 0,  128 } },
     { "imu_dcm_kp",                 VAR_UINT16 | MASTER_VALUE,  &masterConfig.dcm_kp, .config.minmax = { 0,  50000 } },
@@ -613,7 +624,7 @@ const clivalue_t valueTable[] = {
     { "yaw_control_direction",      VAR_INT8   | MASTER_VALUE,  &masterConfig.yaw_control_direction, .config.minmax = { -1,  1 } },
 
     { "yaw_motor_direction",        VAR_INT8   | MASTER_VALUE, &masterConfig.mixerConfig.yaw_motor_direction, .config.minmax = { -1,  1 } },
-    { "agressive_airmode",          VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.agressive_airmode, .config.lookup = { TABLE_OFF_ON } },
+    { "airmode_saturation_limit",   VAR_UINT8  | MASTER_VALUE, &masterConfig.mixerConfig.airmode_saturation_limit, .config.minmax = { 0,  100 } },
     { "yaw_jump_prevention_limit",  VAR_UINT16 | MASTER_VALUE, &masterConfig.mixerConfig.yaw_jump_prevention_limit, .config.minmax = { YAW_JUMP_PREVENTION_LIMIT_LOW,  YAW_JUMP_PREVENTION_LIMIT_HIGH } },
 #ifdef USE_SERVOS
     { "tri_unarmed_servo",          VAR_INT8   | MASTER_VALUE | MODE_LOOKUP, &masterConfig.mixerConfig.tri_unarmed_servo, .config.lookup = { TABLE_OFF_ON } },
@@ -637,6 +648,7 @@ const clivalue_t valueTable[] = {
     { "failsafe_throttle",          VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle, .config.minmax = { PWM_RANGE_MIN,  PWM_RANGE_MAX } },
     { "failsafe_kill_switch",       VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_kill_switch, .config.lookup = { TABLE_OFF_ON } },
     { "failsafe_throttle_low_delay",VAR_UINT16 | MASTER_VALUE,  &masterConfig.failsafeConfig.failsafe_throttle_low_delay, .config.minmax = { 0,  300 } },
+    { "failsafe_procedure",         VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.failsafeConfig.failsafe_procedure, .config.lookup = { TABLE_OFF_ON } },
 
     { "rx_min_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_min_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
     { "rx_max_usec",                VAR_UINT16 | MASTER_VALUE,  &masterConfig.rxConfig.rx_max_usec, .config.minmax = { PWM_PULSE_MIN,  PWM_PULSE_MAX } },
@@ -662,7 +674,8 @@ const clivalue_t valueTable[] = {
 
     { "mag_hardware",               VAR_UINT8  | MASTER_VALUE | MODE_LOOKUP,  &masterConfig.mag_hardware, .config.lookup = { TABLE_MAG_HARDWARE } },
     { "mag_declination",            VAR_INT16  | MASTER_VALUE, &masterConfig.mag_declination, .config.minmax = { -18000,  18000 } },
-    { "delta_from_gyro",            VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaFromGyro, .config.lookup = { TABLE_OFF_ON } },
+    { "pid_delta_method",           VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.deltaMethod, .config.lookup = { TABLE_DELTA_METHOD } },
+    { "dterm_lpf_hz",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
 
     { "pid_controller",             VAR_UINT8  | PROFILE_VALUE | MODE_LOOKUP, &masterConfig.profile[0].pidProfile.pidController, .config.lookup = { TABLE_PID_CONTROLLER } },
 
@@ -702,7 +715,6 @@ const clivalue_t valueTable[] = {
     { "i_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.I8[PIDVEL], .config.minmax = { 0,  200 } },
     { "d_vel",                      VAR_UINT8  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.D8[PIDVEL], .config.minmax = { 0,  200 } },
 
-    { "dterm_lpf_hz",               VAR_FLOAT  | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.dterm_lpf_hz, .config.minmax = {0, 500 } },
     { "acro_plus_factor",           VAR_UINT16 | PROFILE_VALUE, &masterConfig.profile[0].pidProfile.airModeInsaneAcrobilityFactor, .config.minmax = {0, 100 } },
 
 #ifdef BLACKBOX
@@ -1782,18 +1794,6 @@ static void cliDump(char *cmdline)
         cliPrint("\r\n\r\n# color\r\n");
         cliColor("");
 #endif
-        printSectionBreak();
-        dumpValues(MASTER_VALUE);
-
-        cliPrint("\r\n# rxfail\r\n");
-        cliRxFail("");
-    }
-
-    if (dumpMask & DUMP_PROFILE) {
-        cliPrint("\r\n# dump profile\r\n");
-
-        cliPrint("\r\n# profile\r\n");
-        cliProfile("");
 
         cliPrint("\r\n# aux\r\n");
 
@@ -1823,6 +1823,19 @@ static void cliDump(char *cmdline)
             }
         }
 #endif
+
+        printSectionBreak();
+        dumpValues(MASTER_VALUE);
+
+        cliPrint("\r\n# rxfail\r\n");
+        cliRxFail("");
+    }
+
+    if (dumpMask & DUMP_PROFILE) {
+        cliPrint("\r\n# dump profile\r\n");
+
+        cliPrint("\r\n# profile\r\n");
+        cliProfile("");
 
         printSectionBreak();
 

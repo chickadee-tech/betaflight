@@ -119,7 +119,8 @@ extern uint32_t currentTime;
 extern uint8_t PIDweight[3];
 extern bool antiWindupProtection;
 
-
+static filterStatePt1_t filteredCycleTimeState;
+uint16_t filteredCycleTime;
 static bool isRXDataNew;
 
 typedef void (*pidControllerFuncPtr)(pidProfile_t *pidProfile, controlRateConfig_t *controlRateConfig,
@@ -177,20 +178,9 @@ void filterRc(void){
     static int16_t deltaRC[4] = { 0, 0, 0, 0 };
     static int16_t factor, rcInterpolationFactor;
     uint16_t rxRefreshRate;
-    static biquad_t filteredCycleTimeState;
-    static bool filterIsSet;
-    uint16_t filteredCycleTime;
 
     // Set RC refresh rate for sampling and channels to filter
     initRxRefreshRate(&rxRefreshRate);
-
-    /* Initialize cycletime filter */
-    if (!filterIsSet) {
-        BiQuadNewLpf(0.5f, &filteredCycleTimeState, targetLooptime);
-        filterIsSet = true;
-    }
-
-    filteredCycleTime = applyBiQuadFilter((float) cycleTime, &filteredCycleTimeState);
 
     rcInterpolationFactor = rxRefreshRate / filteredCycleTime + 1;
 
@@ -219,7 +209,7 @@ void filterRc(void){
 void scaleRcCommandToFpvCamAngle(void) {
     int16_t roll = rcCommand[ROLL];
     int16_t yaw = rcCommand[YAW];
-    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw, -500, 500);
+    rcCommand[ROLL] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll - sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw, -500, 500);
     rcCommand[YAW] = constrain(cos(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * yaw + sin(masterConfig.rxConfig.fpvCamAngleDegrees*RAD) * roll, -500, 500);
 }
 
@@ -485,7 +475,7 @@ void processRx(void)
     /* In airmode Iterm should be prevented to grow when Low thottle and Roll + Pitch Centered.
      This is needed to prevent Iterm winding on the ground, but keep full stabilisation on 0 throttle while in air */
     if (throttleStatus == THROTTLE_LOW) {
-        if (IS_RC_MODE_ACTIVE(BOXAIRMODE)) {
+        if (IS_RC_MODE_ACTIVE(BOXAIRMODE) && !failsafeIsActive() && ARMING_FLAG(ARMED)) {
             if (rollPitchStatus == CENTERED) {
                 antiWindupProtection = true;
             } else {
@@ -648,6 +638,12 @@ void taskMainPidLoop(void)
 {
     cycleTime = getTaskDeltaTime(TASK_SELF);
     dT = (float)targetLooptime * 0.000001f;
+
+    // Calculate average cycle time and average jitter
+    filteredCycleTime = filterApplyPt1(cycleTime, &filteredCycleTimeState, 0.5f, dT);
+
+    debug[0] = cycleTime;
+    debug[1] = cycleTime - filteredCycleTime;
 
     imuUpdateGyroAndAttitude();
 

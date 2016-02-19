@@ -15,25 +15,21 @@
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+typedef void (*dmaCallbackHandlerFuncPtr)(DMA_Channel_TypeDef *channel);
 
-// Type of magnetometer used/detected
 typedef enum {
-    MAG_DEFAULT = 0,
-    MAG_NONE = 1,
-    MAG_HMC5883 = 2,
-    MAG_AK8975 = 3,
-    MAG_AK8963 = 4
-} magSensor_e;
+    DMA1_CH2_HANDLER = 0,
+    DMA1_CH3_HANDLER,
+    DMA1_CH6_HANDLER,
+    DMA1_CH7_HANDLER,
+} dmaHandlerIdentifier_e;
 
-#define MAG_MAX  MAG_AK8963
+typedef struct dmaHandlers_s {
+    dmaCallbackHandlerFuncPtr dma1Channel2IRQHandler;
+    dmaCallbackHandlerFuncPtr dma1Channel3IRQHandler;
+    dmaCallbackHandlerFuncPtr dma1Channel6IRQHandler;
+    dmaCallbackHandlerFuncPtr dma1Channel7IRQHandler;
+} dmaHandlers_t;
 
-#ifdef MAG
-void compassInit(void);
-void updateCompass(flightDynamicsTrims_t *magZero);
-#endif
-
-extern int32_t magADC[XYZ_AXIS_COUNT];
-
-extern sensor_align_e magAlign;
-extern mag_t mag;
+void dmaInit(void);
+void dmaSetHandler(dmaHandlerIdentifier_e identifier, dmaCallbackHandlerFuncPtr callback);
