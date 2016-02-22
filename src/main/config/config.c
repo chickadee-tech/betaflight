@@ -242,7 +242,12 @@ void resetFlight3DConfig(flight3DConfig_t *flight3DConfig)
 
 void resetTelemetryConfig(telemetryConfig_t *telemetryConfig)
 {
+  #if defined(STM32F303xC) && !defined(CKD_F3FC)
+    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
+    telemetryConfig->telemetry_inversion = 1;
+  #else
     telemetryConfig->telemetry_inversion = 0;
+  #endif
     telemetryConfig->telemetry_switch = 0;
     telemetryConfig->gpsNoFixLatitude = 0;
     telemetryConfig->gpsNoFixLongitude = 0;
@@ -348,10 +353,10 @@ uint8_t getCurrentControlRateProfile(void)
     return currentControlRateProfileIndex;
 }
 
-static void setControlRateProfile(uint8_t profileIndex)	{		
-	currentControlRateProfileIndex = profileIndex;	
-	masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;	
-	currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];		
+static void setControlRateProfile(uint8_t profileIndex)	{
+	currentControlRateProfileIndex = profileIndex;
+	masterConfig.profile[getCurrentProfile()].activeRateProfile = profileIndex;
+	currentControlRateProfile = &masterConfig.profile[getCurrentProfile()].controlRateProfile[profileIndex];
 }
 
 
@@ -488,7 +493,7 @@ static void resetConf(void)
     masterConfig.emf_avoidance = 0;
 
     resetPidProfile(&currentProfile->pidProfile);
-	
+
 	uint8_t rI;
 	for (rI = 0; rI<MAX_RATEPROFILES; rI++) {
 		resetControlRateConfig(&masterConfig.profile[0].controlRateProfile[rI]);
@@ -844,12 +849,6 @@ void validateAndFixConfig(void)
     }
 #endif
 
-#ifdef STM32F303xC
-    // hardware supports serial port inversion, make users life easier for those that want to connect SBus RX's
-    masterConfig.telemetryConfig.telemetry_inversion = 1;
-#endif
-
-
 /*#if defined(LED_STRIP) && defined(TRANSPONDER) // TODO - Add transponder feature
     if ((WS2811_DMA_TC_FLAG == TRANSPONDER_DMA_TC_FLAG) && featureConfigured(FEATURE_TRANSPONDER) && featureConfigured(FEATURE_LED_STRIP)) {
         featureClear(FEATURE_LED_STRIP);
@@ -1006,12 +1005,12 @@ void changeProfile(uint8_t profileIndex)
     beeperConfirmationBeeps(profileIndex + 1);
 }
 
-void changeControlRateProfile(uint8_t profileIndex) {		
-	if (profileIndex > MAX_RATEPROFILES) {		
-		profileIndex = MAX_RATEPROFILES - 1;		
-	}		
-	setControlRateProfile(profileIndex);		
-	activateControlRateConfig();		
+void changeControlRateProfile(uint8_t profileIndex) {
+	if (profileIndex > MAX_RATEPROFILES) {
+		profileIndex = MAX_RATEPROFILES - 1;
+	}
+	setControlRateProfile(profileIndex);
+	activateControlRateConfig();
 }
 
 void handleOneshotFeatureChangeOnRestart(void)
