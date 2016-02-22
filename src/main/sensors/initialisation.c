@@ -220,7 +220,7 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
               .exti_irqn = EXTI15_10_IRQn
       };
     #endif  // DEBUG_BOARD
-  #else
+  #else // V4 or V5
     static const extiConfig_t chickadeeF3FCMPUIntExtiConfig = {
             .gpioAHBPeripherals = RCC_AHBPeriph_GPIOB,
             .gpioPort = GPIOB,

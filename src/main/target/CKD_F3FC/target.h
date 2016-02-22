@@ -96,6 +96,8 @@
 //#define DEBUG_BOARD
 
 //#define V3_BOARD
+#define V4_BOARD
+//#define V5_BOARD
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_13
@@ -129,12 +131,19 @@
   #define MPU6500_CS_GPIO                  GPIOB
   #define MPU6500_CS_PIN                   GPIO_Pin_12
   #define MPU6500_SPI_INSTANCE             SPI2
-#else
+#else  // V4
   #define MPU6500_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
   #define MPU6500_CS_GPIO                  GPIOA
   #define MPU6500_CS_PIN                   GPIO_Pin_4
   #define MPU6500_SPI_INSTANCE             SPI1
 #endif
+
+// V5
+#define MPU6000_CS_GPIO_CLK_PERIPHERAL   RCC_AHBPeriph_GPIOA
+#define MPU6000_CS_GPIO                  GPIOA
+#define MPU6000_CS_PIN                   GPIO_Pin_4
+#define MPU6000_SPI_INSTANCE             SPI1
+
 #define USE_SPI_DEVICE_1
 #define USE_SPI_DEVICE_2
 // TODO(tannewt): Support SPI 3.
@@ -146,6 +155,12 @@
 #endif  // DEBUG_BOARD
 
 #define GYRO
+// V5
+#define USE_GYRO_MPU6000
+#define USE_GYRO_SPI_MPU6000
+#define GYRO_MPU6000_ALIGN CW0_DEG
+
+// <= V4
 #define USE_GYRO_MPU6500
 #define USE_GYRO_SPI_MPU6500
 #ifdef V3_BOARD
@@ -157,6 +172,13 @@
 //#define USE_FAKE_GYRO
 
 #define ACC
+
+// V5
+#define USE_ACC_MPU6000
+#define USE_ACC_SPI_MPU6000
+#define ACC_MPU6000_ALIGN CW0_DEG
+
+// <= V4
 #define USE_ACC_MPU6500
 #define USE_ACC_SPI_MPU6500
 #ifdef V3_BOARD
