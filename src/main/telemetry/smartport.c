@@ -232,6 +232,8 @@ void configureSmartPortTelemetryPort(void)
 
     #if !defined(CKD_F3FC) && !defined(CKD_F4FC)
       portOptions = SERIAL_BIDIR;
+    #else
+      portOptions = 0;
     #endif
 
     if (telemetryConfig->telemetry_inversion) {
@@ -276,7 +278,7 @@ void checkSmartPortTelemetryState(void)
 void handleSmartPortTelemetry(void)
 {
     uint32_t smartPortLastServiceTime = millis();
-    
+
     if (!smartPortTelemetryEnabled) {
         return;
     }

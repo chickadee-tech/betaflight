@@ -758,6 +758,10 @@ CKD_F3FC_SRC = \
  		   drivers/accgyro_spi_mpu6500.c \
  		   drivers/accgyro_mpu6500.c \
  		   drivers/serial_usb_vcp.c \
+		   drivers/sdcard.c \
+		   drivers/sdcard_standard.c \
+		   io/asyncfatfs/asyncfatfs.c \
+		   io/asyncfatfs/fat_standard.c \
  		   $(HIGHEND_SRC) \
  		   $(COMMON_SRC) \
  		   $(VCP_SRC)

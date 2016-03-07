@@ -96,8 +96,8 @@
 //#define DEBUG_BOARD
 
 //#define V3_BOARD
-#define V4_BOARD
-//#define V5_BOARD
+//#define V4_BOARD
+#define V5_BOARD
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_13
@@ -112,18 +112,17 @@
 #define LED2_PERIPHERAL RCC_AHBPeriph_GPIOC
 //#define LED2_INVERTED
 
-// #ifdef DEBUG_BOARD
-// #define BEEP_GPIO   GPIOE
-// #define BEEP_PIN    Pin_5
-// #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
-// #else
-// #define BEEP_GPIO   GPIOA
-// #define BEEP_PIN    Pin_14
-// #define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
-// #endif
-// #define BEEPER_INVERTED
-// #define BEEPER
-
+#ifdef DEBUG_BOARD
+#define BEEP_GPIO   GPIOA
+#define BEEP_PIN    Pin_14
+#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
+#else
+#define BEEP_GPIO   GPIOA
+#define BEEP_PIN    Pin_13
+#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
+#endif
+#define BEEPER_INVERTED
+#define BEEPER
 
 #define USE_SPI
 #ifdef V3_BOARD
@@ -195,7 +194,6 @@
 // TODO(tannewt): Insert baro defines here.
 // TODO(tannewt): Insert mag defines here.
 
-//#define BEEPER
 #define LED0
 #define LED1
 #define LED2
@@ -243,15 +241,48 @@
 #define I2C2_SDA_PIN_SOURCE  GPIO_PinSource10
 #define I2C2_SDA_CLK_SOURCE  RCC_AHBPeriph_GPIOA
 
-// #define USE_ADC
-//
-// #define ADC_INSTANCE                ADC1
-// #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
-// #define ADC_DMA_CHANNEL             DMA1_Channel1
-//
-// #define VBAT_ADC_GPIO               GPIOC
-// #define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-// #define VBAT_ADC_CHANNEL            ADC_Channel_6
+#define SPI2_GPIO               GPIOB
+#define SPI2_GPIO_PERIPHERAL    RCC_AHBPeriph_GPIOB
+#define SPI2_NSS_PIN            Pin_12
+#define SPI2_NSS_PIN_SOURCE     GPIO_PinSource12
+#define SPI2_SCK_PIN            Pin_13
+#define SPI2_SCK_PIN_SOURCE     GPIO_PinSource13
+#define SPI2_MISO_PIN           Pin_14
+#define SPI2_MISO_PIN_SOURCE    GPIO_PinSource14
+#define SPI2_MOSI_PIN           Pin_15
+#define SPI2_MOSI_PIN_SOURCE    GPIO_PinSource15
+
+#define USE_SDCARD
+#define USE_SDCARD_SPI2
+
+#define SDCARD_SPI_INSTANCE                 SPI2
+#define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
+#define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
+
+// SPI2 is on the APB1 bus whose clock runs at 36MHz. Divide to under 400kHz for init:
+#define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 128
+// Divide to under 25MHz for normal operation:
+#define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER     2
+
+// Note, this is the same DMA channel as USART1_RX. Luckily we don't use DMA for USART Rx.
+#define SDCARD_DMA_CHANNEL_TX               DMA1_Channel5
+#define SDCARD_DMA_CHANNEL_TX_COMPLETE_FLAG DMA1_FLAG_TC5
+
+#define USE_ADC
+
+#define ADC_INSTANCE                ADC1
+#define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
+#define ADC_DMA_CHANNEL             DMA1_Channel1
+
+// PC0
+#define VBAT_ADC_GPIO               GPIOC
+#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
+#define VBAT_ADC_CHANNEL            ADC_Channel_6
+
+// PC3
+#define CURRENT_METER_ADC_GPIO      GPIOC
+#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_3
+#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
 
 #define BLACKBOX
 #define GPS
