@@ -187,7 +187,7 @@ static void resetPidProfile(pidProfile_t *pidProfile)
     pidProfile->P_f[PITCH] = 1.4f;
     pidProfile->I_f[PITCH] = 0.4f;
     pidProfile->D_f[PITCH] = 0.01f;
-    pidProfile->P_f[YAW] = 4.0f;
+    pidProfile->P_f[YAW] = 2.5f;
     pidProfile->I_f[YAW] = 0.4f;
     pidProfile->D_f[YAW] = 0.00f;
     pidProfile->A_level = 4.0f;
@@ -472,7 +472,7 @@ static void resetConf(void)
 
     masterConfig.inputFilteringMode = INPUT_FILTERING_DISABLED;
 
-    masterConfig.retarded_arm = 0;  // TODO - Cleanup retarded arm support
+    masterConfig.gyro_cal_on_first_arm = 0;  // TODO - Cleanup retarded arm support
     masterConfig.disarm_kill_switch = 1;
     masterConfig.auto_disarm_delay = 5;
     masterConfig.small_angle = 25;
