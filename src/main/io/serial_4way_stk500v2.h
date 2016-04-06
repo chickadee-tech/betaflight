@@ -13,16 +13,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Author: 4712
+*/
+#include <platform.h>
+#ifdef USE_SERIAL_4WAY_SK_BOOTLOADER
 
 #pragma once
 
-void pwmWriteMotor(uint8_t index, uint16_t value);
-void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
-void pwmCompleteOneshotMotorUpdate(uint8_t motorCount);
+uint8_t Stk_SignOn(void);
+uint8_t Stk_ConnectEx(void);
+uint8_t Stk_ReadEEprom(void);
+uint8_t Stk_WriteEEprom(void);
+uint8_t Stk_ReadFlash(void);
+uint8_t Stk_WriteFlash(void);
+uint8_t Stk_Chip_Erase(void);
 
-void pwmWriteServo(uint8_t index, uint16_t value);
-
-bool isMotorBrushed(uint16_t motorPwmRate);
-void pwmDisableMotors(void);
-void pwmEnableMotors(void);
+#endif

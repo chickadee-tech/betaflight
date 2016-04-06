@@ -13,16 +13,22 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with Cleanflight.  If not, see <http://www.gnu.org/licenses/>.
- */
+ * Author: 4712
+ * for info about Hagens AVRootloader:
+ * http://www.mikrocontroller.net/topic/avr-bootloader-mit-verschluesselung
+*/
 
 #pragma once
 
-void pwmWriteMotor(uint8_t index, uint16_t value);
-void pwmShutdownPulsesForAllMotors(uint8_t motorCount);
-void pwmCompleteOneshotMotorUpdate(uint8_t motorCount);
+#if defined(USE_SERIAL_4WAY_BLHELI_BOOTLOADER)
 
-void pwmWriteServo(uint8_t index, uint16_t value);
-
-bool isMotorBrushed(uint16_t motorPwmRate);
-void pwmDisableMotors(void);
-void pwmEnableMotors(void);
+void BL_SendBootInit(void);
+uint8_t BL_ConnectEx(void);
+uint8_t BL_SendCMDKeepAlive(void);
+uint8_t BL_PageErase(void);
+uint8_t BL_ReadEEprom(void); 
+uint8_t BL_WriteEEprom(void); 
+uint8_t BL_WriteFlash(void); 
+uint8_t BL_ReadFlash(uint8_t interface_mode);
+void BL_SendCMDRunRestartBootloader(void);
+#endif
