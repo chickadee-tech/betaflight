@@ -875,6 +875,10 @@ void taskUpdateBattery(void)
             updateCurrentMeter(ibatTimeSinceLastServiced, &masterConfig.rxConfig, masterConfig.flight3DConfig.deadband3d_throttle);
         }
     }
+
+    // If we are now on battery init all of our external IO.
+
+    // We are no longer on battery so shut down all of our external IO.
 }
 
 bool taskUpdateRxCheck(void)

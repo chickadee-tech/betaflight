@@ -147,12 +147,12 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 
     { TIM4,  GPIOB, Pin_8,  TIM_Channel_3, TIM4_IRQn,               1, Mode_AF_PP,      GPIO_PinSource8,  GPIO_AF_2}, // PWM2 - PB8
     { TIM4,  GPIOB, Pin_9,  TIM_Channel_4, TIM4_IRQn,               1, Mode_AF_PP,      GPIO_PinSource9,  GPIO_AF_2}, // PWM3 - PB9
-    
+
     { TIM2,  GPIOA, Pin_10, TIM_Channel_4, TIM2_IRQn,               1, Mode_AF_PP,      GPIO_PinSource10, GPIO_AF_10}, // PMW4 - PA10
     { TIM2,  GPIOA, Pin_9,  TIM_Channel_3, TIM2_IRQn,               1, Mode_AF_PP,      GPIO_PinSource9,  GPIO_AF_10}, // PWM5 - PA9
     { TIM2,  GPIOA, Pin_0,  TIM_Channel_1, TIM2_IRQn,               1, Mode_AF_PP,      GPIO_PinSource0,  GPIO_AF_1}, // PWM6 - PA0
     { TIM2,  GPIOA, Pin_1,  TIM_Channel_2, TIM2_IRQn,               1, Mode_AF_PP,      GPIO_PinSource1,  GPIO_AF_1}, // PWM7 - PA1
-    
+
     { TIM3,  GPIOB, Pin_0,  TIM_Channel_3, TIM3_IRQn,               1, Mode_AF_PP_PD,   GPIO_PinSource0,  GPIO_AF_2}, // PWM8 - PB1
     { TIM3,  GPIOB, Pin_1,  TIM_Channel_4, TIM3_IRQn,               1, Mode_AF_PP_PD,   GPIO_PinSource1,  GPIO_AF_2}, // PWM9 - PB0
 };
@@ -395,12 +395,19 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
 const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     // TIM1-4
 // Don't claim the serial debug clock line when we have a debug board.
-#ifndef DEBUG_BOARD
-    { TIM8,  GPIOA, Pin_14,  TIM_Channel_2, TIM8_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource14, GPIO_AF_5},
-#endif
-    { TIM17, GPIOB, Pin_9,   TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_1},
+#ifdef V4_BOARD
+  #ifndef DEBUG_BOARD
+      { TIM8,  GPIOA, Pin_14,  TIM_Channel_2, TIM8_CC_IRQn,            0, Mode_AF_PP_PD, GPIO_PinSource14, GPIO_AF_5},
+  #endif
+      { TIM17, GPIOB, Pin_9,   TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_1},
+      { TIM16, GPIOB, Pin_8,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_1},
+      { TIM2,  GPIOB, Pin_10,  TIM_Channel_3, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1},
+#else
     { TIM16, GPIOB, Pin_8,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource8,  GPIO_AF_1},
+    { TIM17, GPIOB, Pin_9,   TIM_Channel_1, TIM1_TRG_COM_TIM17_IRQn, 1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_1},
     { TIM2,  GPIOB, Pin_10,  TIM_Channel_3, TIM2_IRQn,               1, Mode_AF_PP, GPIO_PinSource10, GPIO_AF_1},
+    { TIM15,  GPIOA, Pin_3,  TIM_Channel_1, TIM1_BRK_TIM15_IRQn,               1, Mode_AF_PP, GPIO_PinSource1, GPIO_AF_9},
+#endif
 
     // Internal timer group for the first four outputs.
     { TIM1,  GPIOE, Pin_9,   TIM_Channel_1, TIM1_UP_TIM16_IRQn,      1, Mode_AF_PP, GPIO_PinSource9,  GPIO_AF_2},
@@ -421,10 +428,10 @@ const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
     { TIM4, GPIOD, Pin_12,  TIM_Channel_1, TIM4_IRQn,                1, Mode_AF_PP, GPIO_PinSource12,  GPIO_AF_2},
 };
 
-#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(16) |TIM_N(17))
+#define USED_TIMERS  (TIM_N(1) | TIM_N(2) | TIM_N(3) | TIM_N(4) | TIM_N(8) | TIM_N(15) | TIM_N(16) |TIM_N(17))
 
 #define TIMER_APB1_PERIPHERALS (RCC_APB1Periph_TIM2 | RCC_APB1Periph_TIM3 | RCC_APB1Periph_TIM4)
-#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
+#define TIMER_APB2_PERIPHERALS (RCC_APB2Periph_TIM1 | RCC_APB2Periph_TIM8 | RCC_APB2Periph_TIM15 | RCC_APB2Periph_TIM16 | RCC_APB2Periph_TIM17)
 #define TIMER_AHB_PERIPHERALS (RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB | RCC_AHBPeriph_GPIOC | RCC_AHBPeriph_GPIOD | RCC_AHBPeriph_GPIOE)
 
 #endif

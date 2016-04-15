@@ -134,6 +134,7 @@ void sdcardInsertionDetectInit(void)
 
     GPIO_InitStructure.GPIO_Pin = SDCARD_DETECT_PIN;
     GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+    // TODO(tannewt): Shouldn't this pull down if the pin is not inverted?
     GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
     GPIO_Init(SDCARD_DETECT_GPIO_PORT, &GPIO_InitStructure);
 #endif
@@ -1028,7 +1029,7 @@ bool sdcard_readBlock(uint32_t blockIndex, uint8_t *buffer, sdcard_operationComp
         sdcard.pendingOperation.blockIndex = blockIndex;
         sdcard.pendingOperation.callback = callback;
         sdcard.pendingOperation.callbackData = callbackData;
-        
+
         sdcard.state = SDCARD_STATE_READING;
 
         sdcard.operationStartTime = millis();

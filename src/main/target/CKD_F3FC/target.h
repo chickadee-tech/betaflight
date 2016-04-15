@@ -96,8 +96,8 @@
 //#define DEBUG_BOARD
 
 //#define V3_BOARD
-//#define V4_BOARD
-#define V5_BOARD
+#define V4_BOARD
+//#define V5_BOARD
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_13
@@ -115,7 +115,7 @@
 #ifdef DEBUG_BOARD
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_14
-#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOE
+#define BEEP_PERIPHERAL RCC_AHBPeriph_GPIOA
 #else
 #define BEEP_GPIO   GPIOA
 #define BEEP_PIN    Pin_13
@@ -123,6 +123,11 @@
 #endif
 #define BEEPER_INVERTED
 #define BEEPER
+
+#define SPEKTRUM_BIND
+// USART2, PA3
+#define BIND_PORT  GPIOD
+#define BIND_PIN   Pin_5
 
 #define USE_SPI
 #ifdef V3_BOARD
@@ -255,6 +260,16 @@
 #define USE_SDCARD
 #define USE_SDCARD_SPI2
 
+#define SDCARD_DETECT_INVERTED
+
+#define SDCARD_DETECT_PIN                   GPIO_Pin_4
+// #define SDCARD_DETECT_EXTI_LINE             EXTI_Line4
+// #define SDCARD_DETECT_EXTI_PIN_SOURCE       EXTI_PinSource4
+#define SDCARD_DETECT_GPIO_PORT             GPIOE
+#define SDCARD_DETECT_GPIO_CLK              RCC_AHBPeriph_GPIOE
+// #define SDCARD_DETECT_EXTI_PORT_SOURCE      EXTI_PortSourceGPIOE
+// #define SDCARD_DETECT_EXTI_IRQn             EXTI4_IRQn
+
 #define SDCARD_SPI_INSTANCE                 SPI2
 #define SDCARD_SPI_CS_GPIO                  SPI2_GPIO
 #define SDCARD_SPI_CS_PIN                   SPI2_NSS_PIN
@@ -286,7 +301,7 @@
 
 #define BLACKBOX
 #define GPS
-#define GTUNE
+//#define GTUNE
 //#define LED_STRIP
 //#define LED_STRIP_TIMER TIM16
 #define TELEMETRY
@@ -294,12 +309,5 @@
 #define USE_SERVOS
 #define USE_CLI
 
-// This is the pass through for ESCs.
-// #define USE_SERIAL_1WIRE
-//
-// // STM32F3DISCOVERY TX - PD5 connects to UART RX
-// #define S1W_TX_GPIO         GPIOD
-// #define S1W_TX_PIN          GPIO_Pin_5
-// // STM32F3DISCOVERY RX - PD6 connects to UART TX
-// #define S1W_RX_GPIO         GPIOD
-// #define S1W_RX_PIN          GPIO_Pin_6
+#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
+#define USE_SERIAL_4WAY_SK_BOOTLOADER
