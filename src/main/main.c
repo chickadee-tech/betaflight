@@ -26,7 +26,6 @@
 
 #include "common/axis.h"
 #include "common/color.h"
-#include "common/atomic.h"
 #include "common/maths.h"
 
 #include "drivers/nvic.h"
@@ -177,7 +176,7 @@ void init(void)
 #ifdef STM32F10X
     // Configure the System clock frequency, HCLK, PCLK2 and PCLK1 prescalers
     // Configure the Flash Latency cycles and enable prefetch buffer
-    SetSysClock(masterConfig.emf_avoidance);
+    SetSysClock(0); // TODO - Remove from config in the future
 #endif
     //i2cSetOverclock(masterConfig.i2c_overclock);
 
@@ -312,18 +311,14 @@ void init(void)
     pwm_params.servoPwmRate = masterConfig.servo_pwm_rate;
 #endif
 
-    pwm_params.useOneshot = feature(FEATURE_ONESHOT125);
-    if (masterConfig.use_oneshot42) {
-        pwm_params.useOneshot42 = masterConfig.use_oneshot42 ? true : false;
-        masterConfig.use_multiShot = false;
-    } else {
-        pwm_params.useMultiShot = masterConfig.use_multiShot ? true : false;
-    }
+    pwm_params.useFastPwm = feature(FEATURE_ONESHOT125);  // Configurator feature abused for enabling Fast PWM
+    pwm_params.fastPwmProtocolType = masterConfig.fast_pwm_protocol;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
+    pwm_params.useUnsyncedPwm = masterConfig.use_unsyncedPwm;
     if (feature(FEATURE_3D))
         pwm_params.idlePulse = masterConfig.flight3DConfig.neutral3d;
-    if (pwm_params.motorPwmRate > 500)
+    if (pwm_params.motorPwmRate > 500 && !pwm_params.useFastPwm)
         pwm_params.idlePulse = 0; // brushed motors
 #ifdef CC3D
     pwm_params.useBuzzerP6 = masterConfig.use_buzzer_p6 ? true : false;
@@ -658,7 +653,7 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-int main(void) {
+void main_init(void) {
     init();
 
     /* Setup scheduler */
@@ -729,62 +724,85 @@ int main(void) {
 #ifdef USE_BST
     setTaskEnabled(TASK_BST_MASTER_PROCESS, true);
 #endif
-
-    while (1) {
-        scheduler();
-        processLoopback();
-    }
 }
 
-// /* The prototype shows it is a naked function - in effect this is just an
-// assembly function. */
-// static void HardFault_Handler( void ) __attribute__( ( naked ) );
-//
-// /* The fault handler implementation calls a function called
-// prvGetRegistersFromStack(). */
-// static void HardFault_Handler(void)
-// {
-//     __asm volatile
-//     (
-//         " tst lr, #4                                                \n"
-//         " ite eq                                                    \n"
-//         " mrseq r0, msp                                             \n"
-//         " mrsne r0, psp                                             \n"
-//         " ldr r1, [r0, #24]                                         \n"
-//         " ldr r2, handler2_address_const                            \n"
-//         " bx r2                                                     \n"
-//         " handler2_address_const: .word prvGetRegistersFromStack    \n"
-//     );
-// }
-//
-// void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
-// {
-// /* These are volatile to try and prevent the compiler/linker optimising them
-// away as the variables never actually get used.  If the debugger won't show the
-// values of the variables, make them global my moving their declaration outside
-// of this function. */
-// volatile uint32_t r0;
-// volatile uint32_t r1;
-// volatile uint32_t r2;
-// volatile uint32_t r3;
-// volatile uint32_t r12;
-// volatile uint32_t lr; /* Link register. */
-// volatile uint32_t pc; /* Program counter. */
-// volatile uint32_t psr;/* Program status register. */
-//
-//     r0 = pulFaultStackAddress[ 0 ];
-//     r1 = pulFaultStackAddress[ 1 ];
-//     r2 = pulFaultStackAddress[ 2 ];
-//     r3 = pulFaultStackAddress[ 3 ];
-//
-//     r12 = pulFaultStackAddress[ 4 ];
-//     lr = pulFaultStackAddress[ 5 ];
-//     pc = pulFaultStackAddress[ 6 ];
-//     psr = pulFaultStackAddress[ 7 ];
-//
-//     /* When the following line is hit, the variables contain the register values. */
-//     for( ;; );
-// }
+void main_step(void)
+{
+    scheduler();
+    processLoopback();
+}
+
+#ifndef NOMAIN
+int main(void)
+{
+    main_init();
+    while(1) {
+        main_step();
+    }
+}
+#endif
+
+
+#ifdef DEBUG_HARDFAULTS
+//from: https://mcuoneclipse.com/2012/11/24/debugging-hard-faults-on-arm-cortex-m/
+/**
+ * hard_fault_handler_c:
+ * This is called from the HardFault_HandlerAsm with a pointer the Fault stack
+ * as the parameter. We can then read the values from the stack and place them
+ * into local variables for ease of reading.
+ * We then read the various Fault Status and Address Registers to help decode
+ * cause of the fault.
+ * The function ends with a BKPT instruction to force control back into the debugger
+ */
+void hard_fault_handler_c(unsigned long *hardfault_args){
+  volatile unsigned long stacked_r0 ;
+  volatile unsigned long stacked_r1 ;
+  volatile unsigned long stacked_r2 ;
+  volatile unsigned long stacked_r3 ;
+  volatile unsigned long stacked_r12 ;
+  volatile unsigned long stacked_lr ;
+  volatile unsigned long stacked_pc ;
+  volatile unsigned long stacked_psr ;
+  volatile unsigned long _CFSR ;
+  volatile unsigned long _HFSR ;
+  volatile unsigned long _DFSR ;
+  volatile unsigned long _AFSR ;
+  volatile unsigned long _BFAR ;
+  volatile unsigned long _MMAR ;
+
+  stacked_r0 = ((unsigned long)hardfault_args[0]) ;
+  stacked_r1 = ((unsigned long)hardfault_args[1]) ;
+  stacked_r2 = ((unsigned long)hardfault_args[2]) ;
+  stacked_r3 = ((unsigned long)hardfault_args[3]) ;
+  stacked_r12 = ((unsigned long)hardfault_args[4]) ;
+  stacked_lr = ((unsigned long)hardfault_args[5]) ;
+  stacked_pc = ((unsigned long)hardfault_args[6]) ;
+  stacked_psr = ((unsigned long)hardfault_args[7]) ;
+
+  // Configurable Fault Status Register
+  // Consists of MMSR, BFSR and UFSR
+  _CFSR = (*((volatile unsigned long *)(0xE000ED28))) ;
+
+  // Hard Fault Status Register
+  _HFSR = (*((volatile unsigned long *)(0xE000ED2C))) ;
+
+  // Debug Fault Status Register
+  _DFSR = (*((volatile unsigned long *)(0xE000ED30))) ;
+
+  // Auxiliary Fault Status Register
+  _AFSR = (*((volatile unsigned long *)(0xE000ED3C))) ;
+
+  // Read the Fault Address Registers. These may not contain valid values.
+  // Check BFARVALID/MMARVALID to see if they are valid values
+  // MemManage Fault Address Register
+  _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+  // Bus Fault Address Register
+  _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
+
+  __asm("BKPT #0\n") ; // Break into the debugger
+}
+
+#else
 
 void HardFault_Handler(void)
 {
@@ -803,3 +821,4 @@ void HardFault_Handler(void)
 
     while (1);
 }
+#endif
