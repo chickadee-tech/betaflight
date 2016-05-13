@@ -96,8 +96,8 @@
 //#define DEBUG_BOARD
 
 //#define V3_BOARD
-#define V4_BOARD
-//#define V5_BOARD
+//#define V4_BOARD
+#define V5_BOARD
 
 #define LED0_GPIO   GPIOC
 #define LED0_PIN    Pin_13
@@ -309,5 +309,4 @@
 #define USE_SERVOS
 #define USE_CLI
 
-#define USE_SERIAL_4WAY_BLHELI_BOOTLOADER
-#define USE_SERIAL_4WAY_SK_BOOTLOADER
+#define USE_SERIAL_4WAY_BLHELI_INTERFACE
