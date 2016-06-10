@@ -33,18 +33,18 @@
 
 #define I2C_SHORT_TIMEOUT   ((uint32_t)0x1000)
 #define I2C_LONG_TIMEOUT    ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
-#define I2C_GPIO_AF         GPIO_AF_4 
+#define I2C_GPIO_AF         GPIO_AF_4
 
-#ifndef I2C1_SCL 
-#define I2C1_SCL PB6 
+#ifndef I2C1_SCL
+#define I2C1_SCL PB6
 #endif
-#ifndef I2C1_SDA 
-#define I2C1_SDA PB7 
+#ifndef I2C1_SDA
+#define I2C1_SDA PB7
 #endif
-#ifndef I2C2_SCL 
-#define I2C2_SCL PF4 
+#ifndef I2C2_SCL
+#define I2C2_SCL PF4
 #endif
-#ifndef I2C2_SDA 
+#ifndef I2C2_SDA
 #define I2C2_SDA PA10
 #endif
 
@@ -70,16 +70,16 @@ uint32_t i2cTimeoutUserCallback(void)
 
 void i2cInit(I2CDevice device)
 {
-    
+
     i2cDevice_t *i2c;
     i2c = &(i2cHardwareMap[device]);
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-       
+
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
-    
+
     RCC_ClockCmd(i2c->rcc, ENABLE);
     RCC_I2CCLKConfig(I2Cx == I2C2 ? RCC_I2C2CLK_SYSCLK : RCC_I2C1CLK_SYSCLK);
 
@@ -98,7 +98,7 @@ void i2cInit(I2CDevice device)
             0x00E0257A, // 400 Khz, 72Mhz Clock, Analog Filter Delay ON, Rise 100, Fall 10.
         //.I2C_Timing              = 0x8000050B;
     };
-    
+
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_Cmd(I2Cx, ENABLE);
@@ -114,8 +114,8 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev; 
-    
+    I2Cx = i2cHardwareMap[device].dev;
+
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
@@ -175,13 +175,13 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     return true;
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
+bool i2cReadHelper(I2CDevice device, uint8_t addr_, uint16_t reg, bool single_byte_address, uint8_t len, uint8_t* buf)
 {
     addr_ <<= 1;
 
     I2C_TypeDef *I2Cx;
-    I2Cx = i2cHardwareMap[device].dev; 
-        
+    I2Cx = i2cHardwareMap[device].dev;
+
     /* Test on BUSY Flag */
     i2cTimeout = I2C_LONG_TIMEOUT;
     while (I2C_GetFlagStatus(I2Cx, I2C_ISR_BUSY) != RESET) {
@@ -190,8 +190,13 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
+    uint8_t address_bytes = 1;
+    if (!single_byte_address) {
+      address_bytes = 2;
+    }
+
         /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(I2Cx, addr_, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+    I2C_TransferHandling(I2Cx, addr_, address_bytes, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
         /* Wait until TXIS flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -201,7 +206,17 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
-        /* Send Register address */
+    /* Send Register address */
+    if (!single_byte_address) {
+      I2C_SendData(I2Cx, (uint8_t) (reg >> 8));
+      /* Wait until TXIS flag is set */
+      i2cTimeout = I2C_LONG_TIMEOUT;
+      while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
+        if ((i2cTimeout--) == 0) {
+          return i2cTimeoutUserCallback();
+        }
+      }
+    }
     I2C_SendData(I2Cx, (uint8_t) reg);
 
         /* Wait until TC flag is set */
@@ -247,6 +262,16 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
 
         /* If all operations OK */
     return true;
+}
+
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
+{
+  return i2cReadHelper(device, addr_, (uint16_t) reg, true, len, buf);
+}
+
+bool i2cReadMemory(I2CDevice device, uint8_t addr_, uint16_t reg, uint8_t len, uint8_t* buf)
+{
+  return i2cReadHelper(device, addr_, reg, false, len, buf);
 }
 
 #endif

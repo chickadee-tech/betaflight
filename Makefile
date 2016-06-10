@@ -177,6 +177,14 @@ INCLUDE_DIRS    := $(INCLUDE_DIRS) \
 VPATH           := $(VPATH):$(FATFS_DIR)
 endif
 
+ifneq ($(filter POLYSTACK, $(FEATURES)),)
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+            $(NANOPB_DIR) \
+            $(OBJECT_DIR)/$(TARGET)/drivers
+
+VPATH := $(VPATH):$(NANOPB_DIR)
+endif
+
 LD_SCRIPT       = $(LINKER_DIR)/stm32_flash_f303_$(FLASH_SIZE)k.ld
 
 ARCH_FLAGS      = -mthumb -mcpu=cortex-m4 -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fsingle-precision-constant -Wdouble-promotion
@@ -259,6 +267,14 @@ ifneq ($(filter SDCARD,$(FEATURES)),)
 INCLUDE_DIRS    := $(INCLUDE_DIRS) \
                    $(FATFS_DIR)
 VPATH           := $(VPATH):$(FATFS_DIR)
+endif
+
+ifneq ($(filter POLYSTACK, $(FEATURES)),)
+INCLUDE_DIRS := $(INCLUDE_DIRS) \
+            $(NANOPB_DIR) \
+            $(OBJECT_DIR)/$(TARGET)/drivers
+
+VPATH := $(VPATH):$(NANOPB_DIR)
 endif
 
 #Flags

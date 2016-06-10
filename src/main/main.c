@@ -61,6 +61,10 @@
 #include "bus_bst.h"
 #endif
 
+#ifdef USE_POLYSTACK
+#include "drivers/config_polystack.h"
+#endif
+
 #include "rx/rx.h"
 
 #include "io/beeper.h"
@@ -171,7 +175,7 @@ void init(void)
 
     // initialize IO (needed for all IO operations)
 	IOInitGlobal();
-    
+
     debugMode = masterConfig.debug_mode;
 
 #ifdef USE_HARDWARE_REVISION_DETECTION
@@ -192,10 +196,16 @@ void init(void)
     ledInit(false);
 #endif
     LED2_ON;
-    
+
 #ifdef USE_EXTI
     EXTIInit();
 #endif
+
+#ifdef USE_POLYSTACK
+  i2cInit(I2C_DEVICE);
+  polystackAutoConfigure();
+#endif
+
 
 #if defined(SPRACINGF3MINI) || defined(OMNIBUS)
     gpio_config_t buttonAGpioConfig = {
@@ -289,7 +299,7 @@ void init(void)
 #endif
 #if defined(USE_USART6) && defined(STM32F40_41xxx)
     pwm_params.useUART6 = doesConfigurationUsePort(SERIAL_PORT_USART6);
-#endif    
+#endif
     pwm_params.useVbat = feature(FEATURE_VBAT);
     pwm_params.useSoftSerial = feature(FEATURE_SOFTSERIAL);
     pwm_params.useParallelPWM = feature(FEATURE_RX_PARALLEL_PWM);
@@ -312,11 +322,11 @@ void init(void)
     } else {
         featureClear(FEATURE_ONESHOT125);
     }
-    
+
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm;
 
     // Configurator feature abused for enabling Fast PWM
-    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);  
+    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
     pwm_params.motorPwmRate = masterConfig.motor_pwm_rate;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
@@ -441,7 +451,10 @@ void init(void)
         i2cInit(I2C_DEVICE);
     }
 #else
+
+#ifndef USE_POLYSTACK
     i2cInit(I2C_DEVICE);
+#endif
 #endif
 #endif
 
@@ -488,11 +501,11 @@ void init(void)
 #endif
 
     if (!sensorsAutodetect(&masterConfig.sensorAlignmentConfig,
-                masterConfig.acc_hardware, 
-                masterConfig.mag_hardware, 
-                masterConfig.baro_hardware, 
-                masterConfig.mag_declination, 
-                masterConfig.gyro_lpf, 
+                masterConfig.acc_hardware,
+                masterConfig.mag_hardware,
+                masterConfig.baro_hardware,
+                masterConfig.mag_declination,
+                masterConfig.gyro_lpf,
                 masterConfig.gyro_sync_denom)) {
         // if gyro was not detected due to whatever reason, we give up now.
         failureMode(FAILURE_MISSING_ACC);
@@ -503,7 +516,7 @@ void init(void)
     LED1_ON;
     LED0_OFF;
     LED2_OFF;
-    
+
     for (i = 0; i < 10; i++) {
         LED1_TOGGLE;
         LED0_TOGGLE;
@@ -688,7 +701,7 @@ void processLoopback(void) {
 #define processLoopback()
 #endif
 
-void main_init(void) 
+void main_init(void)
 {
     init();
 
