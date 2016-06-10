@@ -76,6 +76,8 @@
 #define SDCARD_SPI_CS_PIN               SPI2_NSS_PIN
 
 // SPI2 is on the APB1 bus whose clock runs at 84MHz. Divide to under 400kHz for init:
+// TODO(tannewt): Is this right? The comment at the top of the file says its
+// divided by 4 which would make APB1 clock 42mhz.
 #define SDCARD_SPI_INITIALIZATION_CLOCK_DIVIDER 256 // 328kHz
 // Divide to under 25MHz for normal operation:
 #define SDCARD_SPI_FULL_SPEED_CLOCK_DIVIDER 4 // 21MHz
