@@ -48,7 +48,8 @@ static void usartConfigurePinInversion(uartPort_t *uartPort) {
     }
 #endif
 
-#ifdef STM32F303xC
+// Don't enable MCU inversion when we have a hardware inverter.
+#if !defined(INVERTER) && defined(STM32F303xC)
     uint32_t inversionPins = 0;
 
     if (uartPort->port.mode & MODE_TX) {

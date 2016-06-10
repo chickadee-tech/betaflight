@@ -60,6 +60,10 @@
 #include "bus_bst.h"
 #endif
 
+#ifdef USE_POLYSTACK
+#include "drivers/config_polystack.h"
+#endif
+
 #include "rx/rx.h"
 
 #include "io/beeper.h"
@@ -193,6 +197,11 @@ void init(void)
     EXTIInit();
 #endif
 
+#ifdef USE_POLYSTACK
+  i2cInit(I2C_DEVICE);
+  polystackAutoConfigure();
+#endif
+
 #if defined(BUTTONS)
     gpio_config_t buttonAGpioConfig = {
         BUTTON_A_PIN,
@@ -313,7 +322,7 @@ void init(void)
     bool use_unsyncedPwm = masterConfig.use_unsyncedPwm || masterConfig.motor_pwm_protocol == PWM_TYPE_CONVENTIONAL || masterConfig.motor_pwm_protocol == PWM_TYPE_BRUSHED;
 
     // Configurator feature abused for enabling Fast PWM
-    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED); 
+    pwm_params.useFastPwm = (masterConfig.motor_pwm_protocol != PWM_TYPE_CONVENTIONAL && masterConfig.motor_pwm_protocol != PWM_TYPE_BRUSHED);
     pwm_params.pwmProtocolType = masterConfig.motor_pwm_protocol;
     pwm_params.motorPwmRate = use_unsyncedPwm ? masterConfig.motor_pwm_rate : 0;
     pwm_params.idlePulse = masterConfig.escAndServoConfig.mincommand;
@@ -433,7 +442,10 @@ void init(void)
         i2cInit(I2C_DEVICE);
     }
 #else
+
+#ifndef USE_POLYSTACK
     i2cInit(I2C_DEVICE);
+#endif
 #endif
 #endif
 

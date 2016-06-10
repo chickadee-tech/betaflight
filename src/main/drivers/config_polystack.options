@@ -1,0 +1,14 @@
+PolystackMod.single_timer_config    max_count: 4
+PolystackMod.gpio_config            max_count: 6
+PolystackMod.i2c_config             max_count: 4
+PolystackMod.serial_config          max_count: 8
+PolystackMod.timer_group_config     max_count: 2
+PolystackMod.adc_config             max_count: 2
+PolystackMod.spi_config             max_count: 3
+
+ModInfo.manufacturer_name             max_size: 64
+ModInfo.manufacturer_url              max_size: 256
+ModInfo.mod_name                max_size: 64
+ModInfo.mod_url                 max_size: 256
+
+ManufacturingInfo.test_device_id           max_count: 3
