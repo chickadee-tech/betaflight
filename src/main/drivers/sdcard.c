@@ -135,6 +135,7 @@ void sdcardInsertionDetectInit(void)
 #ifdef SDCARD_DETECT_PIN
     sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
     IOInit(sdCardDetectPin, OWNER_SDCARD, RESOURCE_INPUT, 0);
+    // TODO(tannewt): Shouldn't this pull down if the pin is not inverted?
     IOConfigGPIO(sdCardDetectPin, IOCFG_IPU);
 #endif
 }
