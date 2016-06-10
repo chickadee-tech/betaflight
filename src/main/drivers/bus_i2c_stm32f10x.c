@@ -94,9 +94,9 @@ static i2cDevice_t i2cHardwareMap[] = {
 static volatile uint16_t i2cErrorCount = 0;
 
 static i2cState_t i2cState[] = {
-    { false, false, 0, 0, 0, 0, 0, 0, 0 },
-    { false, false, 0, 0, 0, 0, 0, 0, 0 },
-    { false, false, 0, 0, 0, 0, 0, 0, 0 }
+    { false, false, 0, false, 0, 0, 0, 0, 0, 0 },
+    { false, false, 0, false, 0, 0, 0, 0, 0, 0 },
+    { false, false, 0, false, 0, 0, 0, 0, 0, 0 }
 };
 
 void I2C1_ER_IRQHandler(void) {
@@ -180,7 +180,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t data)
     return i2cWriteBuffer(device, addr_, reg_, 1, &data);
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+bool i2cReadHelper(I2CDevice device, uint8_t addr_, bool two_byte_register_address, uint16_t reg_, uint8_t len, uint8_t* buf)
 {
     if (device == I2CINVALID)
         return false;
@@ -194,6 +194,7 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
     state = &(i2cState[device]);
 
     state->addr = addr_ << 1;
+    state->two_byte_register_address = two_byte_register_address;
     state->reg = reg_;
     state->writing = 0;
     state->reading = 1;
@@ -219,6 +220,16 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t
         return i2cHandleHardwareFailure(device);
 
     return !(state->error);
+}
+
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg_, uint8_t len, uint8_t* buf)
+{
+  return i2cReadHelper(device, addr_, false, reg_, len, buf);
+}
+
+bool i2cReadMemory(I2CDevice device, uint8_t addr_, uint16_t reg_, uint8_t len, uint8_t* buf)
+{
+  return i2cReadHelper(device, addr_, true, reg_, len, buf);
 }
 
 static void i2c_er_handler(I2CDevice device) {
@@ -265,7 +276,7 @@ void i2c_ev_handler(I2CDevice device) {
     state = &(i2cState[device]);
 
     static uint8_t subaddress_sent, final_stop;                                 // flag to indicate if subaddess sent, flag to indicate final bus condition
-    static int8_t index;                                                        // index is signed -1 == send the subaddress
+    static int8_t index;                                                        // index is signed < 0 send the subaddress
     uint8_t SReg_1 = I2Cx->SR1;                                                 // read the status register here
 
     if (SReg_1 & I2C_SR1_SB) {                                                  // we just sent a start - EV5 in ref manual
@@ -280,8 +291,13 @@ void i2c_ev_handler(I2CDevice device) {
         }
         else {                                                                // direction is Tx, or we havent sent the sub and rep start
             I2C_Send7bitAddress(I2Cx, state->addr, I2C_Direction_Transmitter);   // send the address and set hardware mode
-            if (state->reg != 0xFF)                                              // 0xFF as subaddress means it will be ignored, in Tx or Rx mode
+            if (state->reg != 0xFF) {                                              // 0xFF as subaddress means it will be ignored, in Tx or Rx mode
+              if (state->two_byte_register_address) {
                 index = -1;                                                     // send a subaddress
+              } else {
+                index = -2;
+              }
+            }
         }
     }
     else if (SReg_1 & I2C_SR1_ADDR) {                                         // we just sent the address - EV6 in ref manual
@@ -353,14 +369,18 @@ void i2c_ev_handler(I2CDevice device) {
             index++;                                                    // to show job is complete
     }
     else if (SReg_1 & I2C_SR1_TXE) {                                  // Byte transmitted EV8 / EV8_1
-        if (index != -1) {                                              // we dont have a subaddress to send
+        if (index >= 0) {                                              // we dont have a subaddress to send
             I2Cx->DR = state->write_p[index++];
             if (state->bytes == index)                                         // we have sent all the data
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                // disable TXE to allow the buffer to flush
         }
         else {
+            if (index == -2) {
+              I2Cx->DR = state->reg >> 8;                                  // send the first byte of the subaddress
+            } else {
+              I2Cx->DR = state->reg & 0xff;                                  // send the second or only byte of the subaddress
+            }
             index++;
-            I2Cx->DR = state->reg;                                             // send the subaddress
             if (state->reading || !(state->bytes))                                      // if receiving or sending 0 bytes, flush now
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                // disable TXE to allow the buffer to flush
         }
