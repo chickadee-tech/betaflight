@@ -82,7 +82,7 @@ void i2cInit(I2CDevice device)
 
     I2C_TypeDef *I2Cx;
     I2Cx = i2c->dev;
-  
+
     IO_t scl = IOGetByTag(i2c->scl);
     IO_t sda = IOGetByTag(i2c->sda);
 
@@ -108,7 +108,7 @@ void i2cInit(I2CDevice device)
     I2C_Init(I2Cx, &i2cInit);
 
     I2C_StretchClockCmd(I2Cx, ENABLE);
- 
+
     I2C_Cmd(I2Cx, ENABLE);
 }
 
@@ -183,7 +183,7 @@ bool i2cWrite(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t data)
     return true;
 }
 
-bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
+bool i2cReadHelper(I2CDevice device, uint8_t addr_, uint16_t reg, bool single_byte_address, uint8_t len, uint8_t* buf)
 {
     addr_ <<= 1;
 
@@ -198,8 +198,13 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
+    uint8_t address_bytes = 1;
+    if (!single_byte_address) {
+      address_bytes = 2;
+    }
+
         /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-    I2C_TransferHandling(I2Cx, addr_, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+    I2C_TransferHandling(I2Cx, addr_, address_bytes, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
         /* Wait until TXIS flag is set */
     i2cTimeout = I2C_LONG_TIMEOUT;
@@ -209,7 +214,17 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
         }
     }
 
-        /* Send Register address */
+    /* Send Register address */
+    if (!single_byte_address) {
+      I2C_SendData(I2Cx, (uint8_t) (reg >> 8));
+      /* Wait until TXIS flag is set */
+      i2cTimeout = I2C_LONG_TIMEOUT;
+      while (I2C_GetFlagStatus(I2Cx, I2C_ISR_TXIS) == RESET) {
+        if ((i2cTimeout--) == 0) {
+          return i2cTimeoutUserCallback();
+        }
+      }
+    }
     I2C_SendData(I2Cx, (uint8_t) reg);
 
         /* Wait until TC flag is set */
@@ -255,6 +270,16 @@ bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t*
 
         /* If all operations OK */
     return true;
+}
+
+bool i2cRead(I2CDevice device, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t* buf)
+{
+  return i2cReadHelper(device, addr_, (uint16_t) reg, true, len, buf);
+}
+
+bool i2cReadMemory(I2CDevice device, uint8_t addr_, uint16_t reg, uint8_t len, uint8_t* buf)
+{
+  return i2cReadHelper(device, addr_, reg, false, len, buf);
 }
 
 #endif

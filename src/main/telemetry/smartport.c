@@ -235,7 +235,11 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    portOptions = SERIAL_BIDIR;
+    #if !defined(CKD_F3FC) && !defined(CKD_F4FC)
+      portOptions = SERIAL_BIDIR;
+    #else
+      portOptions = 0;
+    #endif
 
     if (telemetryConfig->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
