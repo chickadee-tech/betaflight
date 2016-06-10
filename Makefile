@@ -134,6 +134,8 @@ USBFS_DIR       = $(ROOT)/lib/main/STM32_USB-FS-Device_Driver
 USBPERIPH_SRC   = $(notdir $(wildcard $(USBFS_DIR)/src/*.c))
 FATFS_DIR       = $(ROOT)/lib/main/FatFS
 FATFS_SRC       = $(notdir $(wildcard $(FATFS_DIR)/*.c))
+NANOPB_DIR      = $(ROOT)/lib/main/nanopb
+NANOPB_SRC      = $(notdir $(wildcard $(NANOPB_DIR)/*.c))
 
 CSOURCES        := $(shell find $(SRC_DIR) -name '*.c')
 
@@ -534,6 +536,14 @@ TARGET_SRC += \
             io/asyncfatfs/fat_standard.c
 endif
 
+ifneq ($(filter POLYSTACK, $(FEATURES)),)
+TARGET_SRC := \
+            $(NANOPB_SRC) \
+            drivers/config_polystack.pb.c \
+            drivers/config_polystack.c \
+            $(TARGET_SRC)
+endif
+
 ifneq ($(filter VCP,$(FEATURES)),)
 TARGET_SRC += $(VCP_SRC)
 endif
@@ -558,6 +568,7 @@ endif
 CC          := $(CCACHE) arm-none-eabi-gcc
 OBJCOPY     := arm-none-eabi-objcopy
 SIZE        := arm-none-eabi-size
+PROTOC      = protoc
 
 #
 # Tool options.
@@ -650,6 +661,13 @@ $(TARGET_ELF):  $(TARGET_OBJS)
 	@echo LD $(notdir $@)
 	@$(CC) -o $@ $^ $(LDFLAGS)
 	$(SIZE) $(TARGET_ELF)
+
+# Proto compile
+$(OBJECT_DIR)/$(TARGET)/%.pb.c: %.proto %.options
+	@mkdir -p $(dir $@)
+	@echo %% $(notdir $<)
+	$(PROTOC) -o$(basename $(basename $@)).pb -I $(dir $<) $<
+	nanopb_generator -f $(basename $<).options $(basename $(basename $@)).pb
 
 # Compile
 $(OBJECT_DIR)/$(TARGET)/%.o: %.c
