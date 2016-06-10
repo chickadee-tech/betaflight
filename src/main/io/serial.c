@@ -38,7 +38,7 @@
 
 #include "drivers/gpio.h"
 #include "drivers/light_led.h"
- 
+
 #if defined(USE_VCP)
 #include "drivers/serial_usb_vcp.h"
 #endif
@@ -316,7 +316,7 @@ serialPort_t *openSerialPort(
 #endif
 #ifdef USE_USART5
     case SERIAL_PORT_USART5:
-        serialPort = uartOpen(USART5, callback, baudRate, mode, options);
+        serialPort = uartOpen(UART5, callback, baudRate, mode, options);
         break;
 #endif
 #ifdef USE_USART6
@@ -468,7 +468,7 @@ static void nopConsumer(uint8_t data)
  arbitrary serial passthrough "proxy". Optional callbacks can be given to allow
  for specialized data processing.
  */
-void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer 
+void serialPassthrough(serialPort_t *left, serialPort_t *right, serialConsumer
                        *leftC, serialConsumer *rightC)
 {
     waitForSerialPortToFinishTransmitting(left);
