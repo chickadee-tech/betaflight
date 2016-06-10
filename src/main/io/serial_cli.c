@@ -52,6 +52,10 @@
 
 #include "drivers/buf_writer.h"
 
+#ifdef USE_POLYSTACK
+#include "drivers/config_polystack.h"
+#endif
+
 #include "io/escservo.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
@@ -181,6 +185,10 @@ static void cliSdInfo(char *cmdline);
 static void cliBeeper(char *cmdline);
 #endif
 
+#ifdef USE_POLYSTACK
+static void cliPolystack(char *cmdline);
+#endif
+
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
@@ -299,6 +307,9 @@ const clicmd_t cmdTable[] = {
        "<index> [<value>]", cliMotor),
     CLI_COMMAND_DEF("play_sound", NULL,
         "[<index>]\r\n", cliPlaySound),
+#ifdef USE_POLYSTACK
+    CLI_COMMAND_DEF("polystack", "dump information about the polystack", "[layer]", cliPolystack),
+#endif
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
@@ -485,7 +496,7 @@ typedef enum {
     TABLE_GPS_SBAS_MODE,
 #endif
 #ifdef BLACKBOX
-    TABLE_BLACKBOX_DEVICE,  
+    TABLE_BLACKBOX_DEVICE,
 #endif
     TABLE_CURRENT_SENSOR,
     TABLE_GIMBAL_MODE,
@@ -1902,7 +1913,7 @@ static void dumpValues(uint16_t valueSection)
         cliPrintf("set %s = ", valueTable[i].name);
         cliPrintVar(value, 0);
         cliPrint("\r\n");
-        
+
 #ifdef STM32F4
         delay(2);
 #endif
@@ -1939,7 +1950,7 @@ static void cliDump(char *cmdline)
         dumpMask = DUMP_PROFILE; // only
     }
     if (strcasecmp(cmdline, "rates") == 0) {
-        dumpMask = DUMP_RATES; 
+        dumpMask = DUMP_RATES;
     }
 
     if (strcasecmp(cmdline, "all") == 0) {
@@ -2093,29 +2104,26 @@ static void cliDump(char *cmdline)
 
         cliPrint("\r\n# rxfail\r\n");
         cliRxFail("");
-        
+
         if (dumpMask & DUMP_ALL) {
             uint8_t activeProfile = masterConfig.current_profile_index;
+            uint8_t currentRateIndex = currentProfile->activeRateProfile;
             uint8_t profileCount;
+            uint8_t rateCount;
             for (profileCount=0; profileCount<MAX_PROFILE_COUNT;profileCount++) {
                 cliDumpProfile(profileCount);
-
-                uint8_t currentRateIndex = currentProfile->activeRateProfile;
-                uint8_t rateCount;
                 for (rateCount=0; rateCount<MAX_RATEPROFILES; rateCount++)
                     cliDumpRateProfile(rateCount);
-
-                cliPrint("\r\n# restore original rateprofile selection\r\n");
-
-                changeControlRateProfile(currentRateIndex);
-                cliRateProfile("");
             }
 
-            cliPrint("\r\n# restore original profile selection\r\n");
+            cliPrint("\r\n# restore original profile / rateprofile selection\r\n");
 
             changeProfile(activeProfile);
             cliProfile("");
             printSectionBreak();
+
+            changeControlRateProfile(currentRateIndex);
+            cliRateProfile("");
 
             cliPrint("\r\n# save configuration\r\nsave\r\n");
         } else {
@@ -2136,7 +2144,7 @@ static void cliDump(char *cmdline)
 void cliDumpProfile(uint8_t profileIndex) {
         if (profileIndex >= MAX_PROFILE_COUNT) // Faulty values
             return;
-        
+
         changeProfile(profileIndex);
         cliPrint("\r\n# profile\r\n");
         cliProfile("");
@@ -2151,7 +2159,7 @@ void cliDumpProfile(uint8_t profileIndex) {
 void cliDumpRateProfile(uint8_t rateProfileIndex) {
     if (rateProfileIndex >= MAX_RATEPROFILES) // Faulty values
             return;
-    
+
     changeControlRateProfile(rateProfileIndex);
     cliPrint("\r\n# rateprofile\r\n");
     cliRateProfile("");
@@ -2329,6 +2337,61 @@ static void cliBeeper(char *cmdline)
             break;
             }
         }
+    }
+}
+#endif
+
+#ifdef USE_POLYSTACK
+static void printSerialNumber(uint8_t serial_number[16]) {
+    for (int i = 0; i < 16; i++) {
+      cliPrintf("%02x", serial_number[i]);
+      if ((i + 1) % 2 == 0) {
+        cliPrint(" ");
+      }
+    }
+}
+
+static void cliPolystack(char *cmdline)
+{
+    UNUSED(cmdline);
+    PolystackMod mod = PolystackMod_init_default;
+    if (isEmpty(cmdline)) {
+      for (int i = 1; i < 8; i++) {
+        uint8_t serial_number[16];
+        bool serial_read_status = polystackReadSerial(i, serial_number);
+        if (polystackRead(i, &mod)) {
+          cliPrintf("%d) %s %s v%d (%s)\r\n", i, mod.mod_info.manufacturer_name, mod.mod_info.mod_name, mod.mod_info.mod_version, mod.mod_info.mod_url);
+        } else if (serial_read_status) {
+          cliPrintf("%d) Mod memory invalid.\r\n", i);
+        } else {
+          cliPrintf("%d) Empty\r\n", i);
+        }
+      }
+        return;
+    } else {
+      int index = atoi(cmdline);
+
+      uint8_t serial_number[16];
+      bool serial_read_status = polystackReadSerial(index, serial_number);
+      if (polystackRead(index, &mod)) {
+        cliPrintf("Name: %s\r\n", mod.mod_info.mod_name);
+        cliPrintf("ID: 0x%02x\r\n", mod.mod_info.mod_id);
+        cliPrint("Serial number: ");
+        printSerialNumber(serial_number);
+        cliPrint("\r\n");
+        cliPrintf("Version: %d\r\n", mod.mod_info.mod_version);
+        cliPrintf("URL: %s\r\n", mod.mod_info.mod_url);
+        cliPrintf("Manufacturer: %s\r\n", mod.mod_info.manufacturer_name);
+        cliPrintf("Manufacturer ID: 0x%02x\r\n", mod.mod_info.manufacturer_id);
+        cliPrintf("Manufacturer URL: %s\r\n", mod.mod_info.manufacturer_url);
+      } else if (serial_read_status) {
+        cliPrint("Invalid mod memory, unable to parse protocol buffer.\r\n");
+        cliPrint("Serial number: ");
+        printSerialNumber(serial_number);
+        cliPrint("\r\n");
+      } else {
+        cliPrintf("No mod at that index.\r\n", index);
+      }
     }
 }
 #endif
@@ -2528,7 +2591,7 @@ static void cliProfile(char *cmdline)
 
 static void cliRateProfile(char *cmdline) {
     int i;
-    
+
     if (isEmpty(cmdline)) {
         cliPrintf("rateprofile %d\r\n", getCurrentControlRateProfile());
         return;
@@ -2649,7 +2712,7 @@ static void cliPrintVar(const clivalue_t *var, uint32_t full)
             break;
     }
 }
-static void cliPrintVarRange(const clivalue_t *var) 
+static void cliPrintVarRange(const clivalue_t *var)
 {
     switch (var->type & VALUE_MODE_MASK) {
         case (MODE_DIRECT): {
@@ -2661,7 +2724,7 @@ static void cliPrintVarRange(const clivalue_t *var)
             cliPrint("Allowed values:");
             uint8_t i;
             for (i = 0; i < tableEntry->valueCount ; i++) {
-                if (i > 0) 
+                if (i > 0)
                     cliPrint(",");
                 cliPrintf(" %s", tableEntry->values[i]);
             }

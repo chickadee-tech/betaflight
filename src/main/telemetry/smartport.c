@@ -235,7 +235,11 @@ void configureSmartPortTelemetryPort(void)
         return;
     }
 
-    portOptions = SERIAL_BIDIR;
+    #if !defined(CKD_F3FC) && !defined(CKD_F4FC)
+      portOptions = SERIAL_BIDIR;
+    #else
+      portOptions = 0;
+    #endif
 
     if (telemetryConfig->telemetry_inversion) {
         portOptions |= SERIAL_INVERTED;
@@ -307,7 +311,7 @@ void handleSmartPortTelemetry(void)
             smartPortHasRequest = 0;
             return;
         }
-         
+
         // we can send back any data we want, our table keeps track of the order and frequency of each data type we send
         uint16_t id = frSkyDataIdTable[smartPortIdCnt];
         if (id == 0) { // end of table reached, loop back

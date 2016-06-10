@@ -88,11 +88,11 @@ const extiConfig_t *selectMPUIntExtiConfig(void)
 #if defined(MPU_INT_EXTI)
     static const extiConfig_t mpuIntExtiConfig = { .tag = IO_TAG(MPU_INT_EXTI) };
     return &mpuIntExtiConfig;
-#elif defined(USE_HARDWARE_REVISION_DETECTION) 
+#elif defined(USE_HARDWARE_REVISION_DETECTION)
     return selectMPUIntExtiConfigByHardwareRevision();
 #else
     return NULL;
-#endif    
+#endif
 }
 
 #ifdef USE_FAKE_GYRO
@@ -232,7 +232,7 @@ bool detectGyro(void)
             }
 #endif
             ; // fallthrough
-        
+
     case GYRO_MPU9250:
 #ifdef USE_GYRO_SPI_MPU9250
 
