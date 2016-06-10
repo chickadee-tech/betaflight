@@ -61,6 +61,10 @@
 #include "bus_bst.h"
 #endif
 
+#ifdef USE_POLYSTACK
+#include "drivers/config_polystack.h"
+#endif
+
 #include "rx/rx.h"
 #include "rx/spektrum.h"
 
@@ -167,6 +171,11 @@ void init(void)
 
 #ifdef USE_EXTI
     EXTIInit();
+#endif
+
+#ifdef USE_POLYSTACK
+  i2cInit(I2C_DEVICE);
+  polystackAutoConfigure();
 #endif
 
 #if defined(BUTTONS)
@@ -418,7 +427,10 @@ void init(void)
         i2cInit(I2C_DEVICE);
     }
 #else
+
+#ifndef USE_POLYSTACK
     i2cInit(I2C_DEVICE);
+#endif
 #endif
 #endif
 
