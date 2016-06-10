@@ -51,6 +51,10 @@
 
 #include "drivers/buf_writer.h"
 
+#ifdef USE_POLYSTACK
+#include "drivers/config_polystack.h"
+#endif
+
 #include "io/escservo.h"
 #include "io/gps.h"
 #include "io/gimbal.h"
@@ -187,6 +191,10 @@ static void cliSdInfo(char *cmdline);
 static void cliBeeper(char *cmdline);
 #endif
 
+#ifdef USE_POLYSTACK
+static void cliPolystack(char *cmdline);
+#endif
+
 // buffer
 static char cliBuffer[48];
 static uint32_t bufferIndex = 0;
@@ -319,6 +327,9 @@ const clicmd_t cmdTable[] = {
        "<index> [<value>]", cliMotor),
     CLI_COMMAND_DEF("play_sound", NULL,
         "[<index>]\r\n", cliPlaySound),
+#ifdef USE_POLYSTACK
+    CLI_COMMAND_DEF("polystack", "dump information about the polystack", "[layer]", cliPolystack),
+#endif
     CLI_COMMAND_DEF("profile", "change profile",
         "[<index>]", cliProfile),
     CLI_COMMAND_DEF("rateprofile", "change rate profile", "[<index>]", cliRateProfile),
@@ -2896,6 +2907,61 @@ static void cliExit(char *cmdline)
     cliWriter = NULL;
 }
 
+#ifdef USE_POLYSTACK
+static void printSerialNumber(uint8_t serial_number[16]) {
+    for (int i = 0; i < 16; i++) {
+      cliPrintf("%02x", serial_number[i]);
+      if ((i + 1) % 2 == 0) {
+        cliPrint(" ");
+      }
+    }
+}
+
+static void cliPolystack(char *cmdline)
+{
+    UNUSED(cmdline);
+    static PolystackMod mod = PolystackMod_init_default;
+    if (isEmpty(cmdline)) {
+      for (int i = 1; i < 8; i++) {
+        uint8_t serial_number[16];
+        bool serial_read_status = polystackReadSerial(i, serial_number);
+        if (polystackRead(i, &mod)) {
+          cliPrintf("%d) %s %s v%d (%s)\r\n", i, mod.mod_info.manufacturer_name, mod.mod_info.mod_name, mod.mod_info.mod_version, mod.mod_info.mod_url);
+        } else if (serial_read_status) {
+          cliPrintf("%d) Mod memory invalid.\r\n", i);
+        } else {
+          cliPrintf("%d) Empty\r\n", i);
+        }
+      }
+        return;
+    } else {
+      int index = atoi(cmdline);
+
+      uint8_t serial_number[16];
+      bool serial_read_status = polystackReadSerial(index, serial_number);
+      if (polystackRead(index, &mod)) {
+        cliPrintf("Name: %s\r\n", mod.mod_info.mod_name);
+        cliPrintf("ID: 0x%02x\r\n", mod.mod_info.mod_id);
+        cliPrint("Serial number: ");
+        printSerialNumber(serial_number);
+        cliPrint("\r\n");
+        cliPrintf("Version: %d\r\n", mod.mod_info.mod_version);
+        cliPrintf("URL: %s\r\n", mod.mod_info.mod_url);
+        cliPrintf("Manufacturer: %s\r\n", mod.mod_info.manufacturer_name);
+        cliPrintf("Manufacturer ID: 0x%02x\r\n", mod.mod_info.manufacturer_id);
+        cliPrintf("Manufacturer URL: %s\r\n", mod.mod_info.manufacturer_url);
+      } else if (serial_read_status) {
+        cliPrint("Invalid mod memory, unable to parse protocol buffer.\r\n");
+        cliPrint("Serial number: ");
+        printSerialNumber(serial_number);
+        cliPrint("\r\n");
+      } else {
+        cliPrintf("No mod at that index.\r\n", index);
+      }
+    }
+}
+#endif
+
 #ifdef GPS
 static void cliGpsPassthrough(char *cmdline)
 {
@@ -3463,7 +3529,7 @@ static void cliStatus(char *cmdline)
 
 #ifdef USE_SDCARD
     cliSdInfo(NULL);
-#endif   
+#endif
 }
 
 #ifndef SKIP_TASK_STATISTICS
