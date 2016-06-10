@@ -52,7 +52,8 @@ typedef struct i2cState_s {
     volatile bool error;
     volatile bool busy;
     volatile uint8_t addr;
-    volatile uint8_t reg;
+    volatile bool two_byte_register_address;
+    volatile uint16_t reg;
     volatile uint8_t bytes;
     volatile uint8_t writing;
     volatile uint8_t reading;
