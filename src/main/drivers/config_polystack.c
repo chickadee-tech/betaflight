@@ -70,7 +70,6 @@ pb_istream_t i2cstream = {&callback, 0, SIZE_MAX};
 bool polystackRead(uint8_t index, PolystackMod* mod_info) {
   // Read eeproms upwards.
   I2CMemoryStreamState stream_state = {(BASE_MEMORY_ADDRESS >> 1) + index, 0};
-  // first read the length of the proto store in eeprom
   pb_istream_t i2cstream = {&callback, &stream_state, 64 * 1024};
   // now read the proto
   bool read_status = pb_decode_delimited(&i2cstream, PolystackMod_fields, mod_info);
