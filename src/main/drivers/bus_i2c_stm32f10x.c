@@ -289,9 +289,9 @@ void i2c_ev_handler(I2CDevice device) {
             I2C_Send7bitAddress(I2Cx, state->addr, I2C_Direction_Transmitter);   // send the address and set hardware mode
             if (state->reg != 0xFF) {                                              // 0xFF as subaddress means it will be ignored, in Tx or Rx mode
               if (state->two_byte_register_address) {
-                index = -1;                                                     // send a subaddress
+                index = -2;                                                     // send a subaddress
               } else {
-                index = -2;
+                index = -1;
               }
             }
         }
