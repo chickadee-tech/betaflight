@@ -2925,7 +2925,7 @@ static void cliPolystack(char *cmdline)
           cliPrintf("%d) Empty\r\n", i);
         }
       }
-        return;
+      return;
     } else {
       int index = atoi(cmdline);
 
