@@ -2354,7 +2354,7 @@ static void printSerialNumber(uint8_t serial_number[16]) {
 static void cliPolystack(char *cmdline)
 {
     UNUSED(cmdline);
-    PolystackMod mod = PolystackMod_init_default;
+    static PolystackMod mod = PolystackMod_init_default;
     if (isEmpty(cmdline)) {
       for (int i = 1; i < 8; i++) {
         uint8_t serial_number[16];

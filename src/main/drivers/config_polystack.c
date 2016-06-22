@@ -85,7 +85,9 @@ bool polystackReadSerial(uint8_t index, uint8_t serial_number[16]) {
 }
 
 void polystackAutoConfigure(void) {
-  PolystackMod mod = PolystackMod_init_default;
+  // TODO(tannewt): This works fine as a local variable on the F3. Figure out
+  // why it has to be stack on the F4.
+  static PolystackMod mod = PolystackMod_init_default;
   // for (int i = 0; i < 10; i++) {
   //   LED2_TOGGLE;
   //   delay(50);
