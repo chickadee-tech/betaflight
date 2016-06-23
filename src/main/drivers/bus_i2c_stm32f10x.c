@@ -337,8 +337,7 @@ void i2c_ev_handler(I2CDevice device) {
                 I2C_GenerateSTOP(I2Cx, ENABLE);                         // program the Stop
                 state->read_p[state->index++] = (uint8_t)I2Cx->DR;              // read data N - 1
                 I2C_ITConfig(I2Cx, I2C_IT_BUF, ENABLE);                 // enable TXE to allow the final EV7
-            }
-            else {                                                     // EV7_3
+            } else {                                                     // EV7_3
                 if (state->final_stop)
                   I2C_GenerateSTOP(I2Cx, ENABLE);                     // program the Stop
                 else
@@ -347,13 +346,13 @@ void i2c_ev_handler(I2CDevice device) {
                 state->read_p[state->index++] = (uint8_t)I2Cx->DR;                    // read data N
                 state->index++;                                                // to show job completed
             }
-        }
-        else {                                                        // EV8_2, which may be due to a subaddress sent or a write completion
-            if (state->subaddress_sent || (state->writing))
-              if (state->final_stop)
+        } else {                                                        // EV8_2, which may be due to a subaddress sent or a write completion
+            if (state->subaddress_sent || state->writing) {
+              if (state->final_stop) {
                 I2C_GenerateSTOP(I2Cx, ENABLE);                     // program the Stop
-              else
+              } else {
                 I2C_GenerateSTART(I2Cx, ENABLE);                    // program a rep start
+              }
               state->index++;                                                // to show that the job is complete
             }
             else {                                                    // We need to send a subaddress
