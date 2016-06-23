@@ -19,7 +19,7 @@
 
 #define I2C_SHORT_TIMEOUT            ((uint32_t)0x1000)
 #define I2C_LONG_TIMEOUT             ((uint32_t)(10 * I2C_SHORT_TIMEOUT))
-#define I2C_DEFAULT_TIMEOUT          I2C_SHORT_TIMEOUT
+#define I2C_DEFAULT_TIMEOUT         ((uint32_t)(10000 * I2C_SHORT_TIMEOUT))
 
 #include "drivers/io.h"
 #include "drivers/rcc.h"
@@ -59,6 +59,9 @@ typedef struct i2cState_s {
     volatile uint8_t reading;
     volatile uint8_t* write_p;
     volatile uint8_t* read_p;
+    volatile bool subaddress_sent;
+    volatile bool final_stop;
+    volatile int8_t index;
 } i2cState_t;
 
 void i2cInit(I2CDevice device);
