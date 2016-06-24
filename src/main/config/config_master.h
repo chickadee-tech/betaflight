@@ -45,10 +45,6 @@ typedef struct master_t {
     gimbalConfig_t gimbalConfig;
 #endif
 
-#ifdef CC3D
-    uint8_t use_buzzer_p6;
-#endif
-
     // global sensor-related stuff
     sensorAlignmentConfig_t sensorAlignmentConfig;
     boardAlignment_t boardAlignment;
@@ -161,8 +157,11 @@ typedef struct master_t {
     uint8_t blackbox_device;
 #endif
 
+#ifdef BEEPER
+    beeperConfig_t beeperConfig;
     uint32_t beeper_off_flags;
     uint32_t preferred_beeper_off_flags;
+#endif
 
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
