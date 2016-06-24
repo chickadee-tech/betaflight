@@ -563,22 +563,6 @@ TARGET_SRC += $(VCP_SRC)
 endif
 # end target specific make file checks
 
-
-CKD_F4FC_SRC = \
-           $(STM32F4xx_COMMON_SRC) \
-           drivers/accgyro_spi_mpu6000.c \
-           drivers/config_polystack.pb.c \
-           drivers/config_polystack.c \
-           drivers/display_ug2864hsweg01.c \
-           drivers/sdcard.c \
-           drivers/sdcard_standard.c \
-           io/asyncfatfs/asyncfatfs.c \
-           io/asyncfatfs/fat_standard.c \
-           $(HIGHEND_SRC) \
-           $(COMMON_SRC) \
-           $(NANOPB_SRC) \
-           $(VCPF4_SRC)
-
 # Search path and source files for the ST stdperiph library
 VPATH        := $(VPATH):$(STDPERIPH_DIR)/src
 
