@@ -269,15 +269,8 @@
 #define ADC_AHB_PERIPHERAL          RCC_AHBPeriph_DMA1
 #define ADC_DMA_CHANNEL             DMA1_Channel1
 
-// PC0
-#define VBAT_ADC_GPIO               GPIOC
-#define VBAT_ADC_GPIO_PIN           GPIO_Pin_0
-#define VBAT_ADC_CHANNEL            ADC_Channel_6
-
-// PC3
-#define CURRENT_METER_ADC_GPIO      GPIOC
-#define CURRENT_METER_ADC_GPIO_PIN  GPIO_Pin_3
-#define CURRENT_METER_ADC_CHANNEL   ADC_Channel_9
+#define VBAT_ADC_PIN                PC0
+#define CURRENT_METER_ADC_PIN    PC3
 
 #define USE_EXTI
 
