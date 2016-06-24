@@ -194,6 +194,12 @@ bool i2cReadHelper(I2CDevice device, uint8_t addr_, bool two_byte_register_addre
     i2cState_t *state;
     state = &(i2cState[device]);
 
+    // TODO(tannewt): Figure out why this makes I2C more reliable. Is there
+    // some other register we should be waiting to clear before continuing?
+    if (state->busy) {
+      LED1_ON;
+    }
+
     state->addr = addr_ << 1;
     state->two_byte_register_address = two_byte_register_address;
     state->reg = reg_;
@@ -202,7 +208,7 @@ bool i2cReadHelper(I2CDevice device, uint8_t addr_, bool two_byte_register_addre
     state->read_p = buf;
     state->write_p = buf;
     state->bytes = len;
-    state->busy = 1;
+    state->busy = true;
     state->error = false;
     state->subaddress_sent = false;
     state->final_stop = false;
@@ -237,7 +243,6 @@ bool i2cReadMemory(I2CDevice device, uint8_t addr_, uint16_t reg_, uint8_t len, 
 }
 
 static void i2c_er_handler(I2CDevice device) {
-
     I2C_TypeDef *I2Cx;
     I2Cx = i2cHardwareMap[device].dev;
 
