@@ -80,11 +80,12 @@ message SingleTimerConfig {
 message GPIOConfig {
   enum GPIOFunction {
     UNUSED = 0;
-    RC_INVERT = 1;
+    REMOTE_CONTROL_INVERT = 1;
     SWD_SCL = 2;
     SWD_SDIO = 3;
     BUZZER = 4;
     SD_CARD_DETECT = 5;
+    ACTIVITY_LED_ACTIVE_LOW = 6;
   }
   optional GPIOFunction function = 1;
 }

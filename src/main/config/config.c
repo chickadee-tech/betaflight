@@ -40,6 +40,7 @@
 #include "drivers/serial.h"
 #include "drivers/pwm_output.h"
 #include "drivers/max7456.h"
+#include "drivers/sound_beeper.h"
 
 #include "sensors/sensors.h"
 #include "sensors/gyro.h"
@@ -172,6 +173,8 @@ static uint8_t currentControlRateProfileIndex = 0;
 controlRateConfig_t *currentControlRateProfile;
 
 static const uint8_t EEPROM_CONF_VERSION = 141;
+
+extern uint8_t hardwareRevision;
 
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
@@ -383,6 +386,31 @@ void resetMixerConfig(mixerConfig_t *mixerConfig)
     mixerConfig->servo_lowpass_freq = 400;
     mixerConfig->servo_lowpass_enable = 0;
 #endif
+}
+
+void resetBeeperConfig(beeperConfig_t *beeperConfig) {
+  beeperConfig->ioTag = IO_TAG(BEEPER);
+  #ifdef BEEPER_INVERTED
+    beeperConfig->isOD = false;
+    beeperConfig->isInverted = true;
+  #else
+    beeperConfig->isOD = true;
+    beeperConfig->isInverted = false;
+  #endif
+
+  #ifdef NAZE
+    if (hardwareRevision >= NAZE32_REV5) {
+        // naze rev4 and below used opendrain to PNP for buzzer. Rev5 and above use PP to NPN.
+        beeperConfig->isOD = false;
+        beeperConfig->isInverted = true;
+    }
+  #endif
+  // TODO(tannewt): Expose this via the CLI so that CC3D users can select the
+  // pin.
+  // #ifdef CC3D
+  //   if (masterConfig.use_buzzer_p6 == 1)
+  //   beeperConfig.ioTag = IO_TAG(BEEPER_OPT);
+  // #endif
 }
 
 uint8_t getCurrentProfile(void)
@@ -608,6 +636,10 @@ static void resetConf(void)
 
 #ifdef GPS
     resetGpsProfile(&masterConfig.gpsProfile);
+#endif
+
+#ifdef BEEPER
+    resetBeeperConfig(&masterConfig.beeperConfig);
 #endif
 
     // custom mixer. clear by defaults.

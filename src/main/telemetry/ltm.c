@@ -48,6 +48,7 @@
 #include "drivers/timer.h"
 #include "drivers/serial.h"
 #include "drivers/pwm_rx.h"
+#include "drivers/sound_beeper.h"
 
 #include "sensors/sensors.h"
 #include "sensors/acceleration.h"
