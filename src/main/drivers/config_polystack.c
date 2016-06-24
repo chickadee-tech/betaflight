@@ -19,6 +19,7 @@
 #include "drivers/timer.h" // before pwm_rx!
 #include "drivers/pwm_rx.h"
 #include "drivers/serial.h"
+#include "drivers/sound_beeper.h"
 
 #include "sensors/acceleration.h"
 #include "flight/failsafe.h"
@@ -55,6 +56,7 @@
 #include "blackbox/blackbox_io.h"
 
 static serialPortIdentifier_e serialPortMapping[8] = POLYSTACK_SERIAL_PORT_ORDER;
+static ioTag_t gpioPortMapping[6] = POLYSTACK_GPIO_PORT_ORDER;
 
 bool callback(pb_istream_t *stream, uint8_t *buf, size_t count)
 {
@@ -93,6 +95,7 @@ void polystackAutoConfigure(void) {
   //   delay(50);
   // }
   uint8_t serial_index = 0;
+  uint8_t gpio_index = 0;
   for (int i = 1; i < 8; i++) {
     if (!polystackRead(i, &mod)) {
       break;
@@ -160,6 +163,35 @@ void polystackAutoConfigure(void) {
         masterConfig.blackbox_device = BLACKBOX_DEVICE_SDCARD;
         featureSet(FEATURE_BLACKBOX);
       }
+    }
+
+    // Configure gpio pins based on the protos stored in mod memory.
+    for (int i = 0; i < mod.gpio_config_count; ++i) {
+      switch (mod.gpio_config[i].function) {
+        case GPIOConfig_GPIOFunction_REMOTE_CONTROL_INVERT:
+          // TODO(tannewt): Support the inverter.
+          break;
+        case GPIOConfig_GPIOFunction_SWD_SCL:
+          // TODO(tannewt): Show a warning on the CLI when the SCL pin is
+          // wrong. People will need to change the stack order.
+          break;
+        case GPIOConfig_GPIOFunction_SWD_SDIO:
+          // TODO(tannewt): Show a warning on the CLI when the SDIO pin is
+          // wrong. People will need to change the stack order.
+          break;
+        case GPIOConfig_GPIOFunction_BUZZER:
+          masterConfig.beeperConfig.ioTag = gpioPortMapping[gpio_index];
+          break;
+        case GPIOConfig_GPIOFunction_SD_CARD_DETECT:
+          // TODO(tannewt): Configure the SD card detect.
+          break;
+        case GPIOConfig_GPIOFunction_ACTIVITY_LED_ACTIVE_LOW:
+          // TODO(tannewt): Implement a blackbox activity LED.
+          break;
+        default:
+          break;
+      }
+      gpio_index++;
     }
   }
 
