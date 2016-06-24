@@ -26,6 +26,7 @@
 #include "drivers/pwm_rx.h"
 #include "drivers/adc.h"
 #include "drivers/light_led.h"
+#include "drivers/sound_beeper.h"
 
 #include "rx/rx.h"
 #include "rx/msp.h"
@@ -283,7 +284,7 @@ void checkSmartPortTelemetryState(void)
 void handleSmartPortTelemetry(void)
 {
     uint32_t smartPortLastServiceTime = millis();
-    
+
     if (!smartPortTelemetryEnabled) {
         return;
     }
