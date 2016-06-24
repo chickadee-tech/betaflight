@@ -44,6 +44,7 @@
 #include "drivers/buf_writer.h"
 #include "drivers/max7456.h"
 #include "drivers/vtx_soft_spi_rtc6705.h"
+#include "drivers/sound_beeper.h"
 #include "rx/rx.h"
 #include "rx/msp.h"
 

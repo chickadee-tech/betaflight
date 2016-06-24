@@ -48,6 +48,8 @@
 #include "drivers/timer.h"
 #include "drivers/pwm_rx.h"
 #include "drivers/sdcard.h"
+#include "drivers/gyro_sync.h"
+#include "drivers/sound_beeper.h"
 
 #include "drivers/buf_writer.h"
 
