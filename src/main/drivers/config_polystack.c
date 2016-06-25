@@ -183,7 +183,7 @@ void polystackAutoConfigure(void) {
           masterConfig.beeperConfig.ioTag = gpioPortMapping[gpio_index];
           break;
         case GPIOConfig_GPIOFunction_SD_CARD_DETECT:
-          // TODO(tannewt): Configure the SD card detect.
+          masterConfig.sdcard_detect_pin = gpioPortMapping[gpio_index];
           break;
         case GPIOConfig_GPIOFunction_ACTIVITY_LED_ACTIVE_LOW:
           // TODO(tannewt): Implement a blackbox activity LED.

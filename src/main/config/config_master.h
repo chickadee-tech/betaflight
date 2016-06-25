@@ -163,6 +163,10 @@ typedef struct master_t {
     uint32_t preferred_beeper_off_flags;
 #endif
 
+#ifdef SDCARD_DETECT_PIN
+    ioTag_t sdcard_detect_pin;
+#endif
+
     uint8_t magic_ef;                       // magic number, should be 0xEF
     uint8_t chk;                            // XOR checksum
    

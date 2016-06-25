@@ -603,10 +603,6 @@ static void resetConf(void)
 #endif
     masterConfig.servo_pwm_rate = 50;
 
-#ifdef CC3D
-    masterConfig.use_buzzer_p6 = 0;
-#endif
-
 #ifdef GPS
     // gps/nav stuff
     masterConfig.gpsConfig.provider   = GPS_NMEA;
@@ -675,6 +671,10 @@ static void resetConf(void)
 
 #ifdef BEEPER
     resetBeeperConfig(&masterConfig.beeperConfig);
+#endif
+
+#ifdef SDCARD_DETECT_PIN
+    masterConfig.sdcard_detect_pin = IO_TAG(SDCARD_DETECT_PIN);
 #endif
 
     // custom mixer. clear by defaults.

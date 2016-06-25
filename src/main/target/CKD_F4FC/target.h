@@ -120,7 +120,6 @@
 #define USE_SDCARD_SPI2
 
 #define SDCARD_DETECT_INVERTED
-
 #define SDCARD_DETECT_PIN                   PE4
 
 #define SDCARD_SPI_INSTANCE                 SPI2
