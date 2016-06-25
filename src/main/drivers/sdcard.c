@@ -25,6 +25,46 @@
 #include "nvic.h"
 #include "io.h"
 
+// Begin headers to access masterConfig.
+#include "common/axis.h"
+#include "common/maths.h"
+
+#include "sensors/sensors.h" // before sensor.h
+#include "drivers/sensor.h" // before accgyro!
+#include "drivers/accgyro.h"
+
+#include "drivers/gpio.h" // before timer!
+#include "drivers/timer.h" // before pwm_rx!
+#include "drivers/pwm_rx.h"
+#include "drivers/serial.h"
+#include "drivers/sound_beeper.h"
+
+#include "sensors/acceleration.h"
+#include "flight/failsafe.h"
+#include "flight/pid.h" // before imu.!
+#include "flight/imu.h"
+#include "flight/mixer.h"
+#include "flight/navigation.h"
+
+#include "io/escservo.h"
+#include "io/gimbal.h"
+#include "io/gps.h"
+#include "io/rc_controls.h"
+#include "io/serial.h"
+
+#include "sensors/barometer.h"
+#include "sensors/battery.h"
+#include "sensors/boardalignment.h"
+#include "sensors/gyro.h"
+
+#include "telemetry/telemetry.h"
+
+#include "config/runtime_config.h"
+#include "config/config.h"
+#include "config/config_profile.h"
+// End headers to access masterConfig.
+#include "config/config_master.h"
+
 #include "drivers/bus_spi.h"
 #include "drivers/system.h"
 
@@ -124,7 +164,7 @@ static IO_t sdCardCsPin = IO_NONE;
 void sdcardInsertionDetectDeinit(void)
 {
 #ifdef SDCARD_DETECT_PIN
-    sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
+    sdCardDetectPin = IOGetByTag(masterConfig.sdcard_detect_pin);
     IOInit(sdCardDetectPin, OWNER_FREE, RESOURCE_NONE, 0);
     IOConfigGPIO(sdCardDetectPin, IOCFG_IN_FLOATING);
 #endif
@@ -133,7 +173,7 @@ void sdcardInsertionDetectDeinit(void)
 void sdcardInsertionDetectInit(void)
 {
 #ifdef SDCARD_DETECT_PIN
-    sdCardDetectPin = IOGetByTag(IO_TAG(SDCARD_DETECT_PIN));
+    sdCardDetectPin = IOGetByTag(masterConfig.sdcard_detect_pin);
     IOInit(sdCardDetectPin, OWNER_SDCARD, RESOURCE_INPUT, 0);
     // TODO(tannewt): Shouldn't this pull down if the pin is not inverted?
     IOConfigGPIO(sdCardDetectPin, IOCFG_IPU);
