@@ -145,7 +145,6 @@
 
 #define USE_ADC
 #define VBAT_ADC_PIN                PC5
-#define VBAT_ADC_CHANNEL            ADC_Channel_15
 
 //#define GPS
 //#define BLACKBOX
