@@ -552,10 +552,11 @@ TARGET_SRC += \
 endif
 
 ifneq ($(filter POLYSTACK, $(FEATURES)),)
-TARGET_SRC += \
+TARGET_SRC := \
             $(NANOPB_SRC) \
             drivers/config_polystack.pb.c \
-            drivers/config_polystack.c
+            drivers/config_polystack.c \
+            $(TARGET_SRC)
 endif
 
 ifneq ($(filter VCP,$(FEATURES)),)
