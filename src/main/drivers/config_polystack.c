@@ -114,6 +114,7 @@ void polystackAutoConfigure(void) {
           break;
         }
       }
+      uint8_t oldFunctionMask = serial_port_config->functionMask;
       serial_port_config->functionMask = 0;
       // TODO(tannewt): Add support for baud rate configuration.
       switch (mod.serial_config[i].function) {
@@ -146,6 +147,10 @@ void polystackAutoConfigure(void) {
         case SerialConfig_SerialFunction_MULTIWII_SERIAL_PROTOCOL:
           serial_port_config->functionMask |= FUNCTION_MSP;
           //serial_port_config->msp_baudrateIndex = BAUD_AUTO;
+          break;
+        case SerialConfig_SerialFunction_USER_CONFIGURED:
+          // Copy the old mask back so we don't clobber it.
+          serial_port_config->functionMask = oldFunctionMask;
           break;
         default:
           break;
