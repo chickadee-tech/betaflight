@@ -52,6 +52,7 @@
 #include "config_polystack.pb.h"
 #include "gpio.h"
 #include "light_led.h"
+#include "system.h"
 
 #include "blackbox/blackbox_io.h"
 
@@ -106,29 +107,32 @@ void polystackAutoConfigure(void) {
     // mods.
 
     // Configure serial ports based on the protos stored in mod memory.
-    for (int i = 0; i < mod.serial_config_count; ++i) {
+    for (int j = 0; j < mod.serial_config_count; ++j) {
       serialPortConfig_t* serial_port_config = NULL;
-      for (int j = 0; j < SERIAL_PORT_COUNT; ++j) {
-        if (masterConfig.serialConfig.portConfigs[j].identifier == serialPortMapping[serial_index]) {
-          serial_port_config = &masterConfig.serialConfig.portConfigs[j];
+      for (int k = 0; k < SERIAL_PORT_COUNT; ++k) {
+        if (masterConfig.serialConfig.portConfigs[k].identifier == serialPortMapping[serial_index]) {
+          serial_port_config = &masterConfig.serialConfig.portConfigs[k];
           break;
         }
       }
       uint8_t oldFunctionMask = serial_port_config->functionMask;
       serial_port_config->functionMask = 0;
       // TODO(tannewt): Add support for baud rate configuration.
-      switch (mod.serial_config[i].function) {
+      switch (mod.serial_config[j].function) {
         case SerialConfig_SerialFunction_REMOTE_CONTROL:
           serial_port_config->functionMask |= FUNCTION_RX_SERIAL;
+          featureClear(FEATURE_RX_PPM);
           featureSet(FEATURE_RX_SERIAL);
-          if (mod.serial_config[i].remote_control_protocol ==
+          featureClear(FEATURE_RX_PARALLEL_PWM);
+          featureClear(FEATURE_RX_MSP);
+          if (mod.serial_config[j].remote_control_protocol ==
                SerialConfig_RemoteControlProtocol_SBUS) {
             masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
             masterConfig.rxConfig.sbus_inversion = 0;
           }
           break;
         case SerialConfig_SerialFunction_TELEMETRY:
-          switch (mod.serial_config[i].telemetry_protocol) {
+          switch (mod.serial_config[j].telemetry_protocol) {
             case SerialConfig_TelemetryProtocol_FRSKY:
               serial_port_config->functionMask |= FUNCTION_TELEMETRY_FRSKY;
               break;
@@ -160,8 +164,8 @@ void polystackAutoConfigure(void) {
     }
 
     // Configure spi based on the protos stored in mod memory.
-    for (int i = 0; i < mod.spi_config_count; ++i) {
-      if (mod.spi_config[i].function == SPIConfig_SPIFunction_SDCARD) {
+    for (int j = 0; j < mod.spi_config_count; ++j) {
+      if (mod.spi_config[j].function == SPIConfig_SPIFunction_SDCARD) {
         // TODO(tannewt): Support multiple SPI mod connections.
         masterConfig.blackbox_rate_num = 1;
         masterConfig.blackbox_rate_denom = 1;
@@ -171,8 +175,8 @@ void polystackAutoConfigure(void) {
     }
 
     // Configure gpio pins based on the protos stored in mod memory.
-    for (int i = 0; i < mod.gpio_config_count; ++i) {
-      switch (mod.gpio_config[i].function) {
+    for (int j = 0; j < mod.gpio_config_count; ++j) {
+      switch (mod.gpio_config[j].function) {
         case GPIOConfig_GPIOFunction_REMOTE_CONTROL_INVERT:
           // TODO(tannewt): Support the inverter.
           break;
@@ -197,6 +201,17 @@ void polystackAutoConfigure(void) {
           break;
       }
       gpio_index++;
+    }
+    // Configure single timer pins based on the protos stored in mod memory.
+    for (int j = 0; j < mod.single_timer_config_count; ++j) {
+      const SingleTimerConfig* config = &mod.single_timer_config[j];
+      if (config->which_function == SingleTimerConfig_input_tag &&
+         config->function.input == SingleTimerConfig_TimerInputFunction_PPM) {
+        featureSet(FEATURE_RX_PPM);
+        featureClear(FEATURE_RX_SERIAL);
+        featureClear(FEATURE_RX_PARALLEL_PWM);
+        featureClear(FEATURE_RX_MSP);
+      }
     }
   }
 
