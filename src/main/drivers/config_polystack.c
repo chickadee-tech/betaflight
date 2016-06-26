@@ -117,10 +117,11 @@ void polystackAutoConfigure(void) {
       serial_port_config->functionMask = 0;
       // TODO(tannewt): Add support for baud rate configuration.
       switch (mod.serial_config[i].function) {
-        case SerialConfig_SerialFunction_RC:
+        case SerialConfig_SerialFunction_REMOTE_CONTROL:
           serial_port_config->functionMask |= FUNCTION_RX_SERIAL;
           featureSet(FEATURE_RX_SERIAL);
-          if (mod.serial_config[i].rc_protocol == SerialConfig_RCProtocol_SBUS) {
+          if (mod.serial_config[i].remote_control_protocol ==
+               SerialConfig_RemoteControlProtocol_SBUS) {
             masterConfig.rxConfig.serialrx_provider = SERIALRX_SBUS;
             masterConfig.rxConfig.sbus_inversion = 0;
           }

@@ -1,5 +1,5 @@
 message ModInfo {
-  // Official enumeration of all Polystack manufacturers. Create a pull
+  // Official enumeration of all FlightStack manufacturers. Create a pull
   // request to claim your own. Until officially merged do not release any
   // products! For testing prior to release use MANUFACTURER_TEST and a random
   // product ID to minimize the likelihood of collisions.
@@ -8,6 +8,7 @@ message ModInfo {
     MANUFACTURER_CHICKADEE_TECH = 1;
   }
   optional Manufacturer manufacturer_id = 1;
+
   // Name of the manufacturer. Limited to 64 characters.
   optional string manufacturer_name = 2;
 
@@ -32,7 +33,7 @@ message ModInfo {
   // Versions 1 and 2 were used in prototyping only.
   optional uint32 connector_version = 8;
 
-  // Stacking height of the Polystack connector.
+  // Stacking height of the FlightStack connector.
   enum DF40StackingHeight {
     HEIGHT_4MM = 0;
     HEIGHT_3_5MM = 1;
@@ -53,6 +54,7 @@ message ModInfo {
 message ManufacturingInfo {
   // 96-bit id, MSB. Added by the test fixture.
   repeated fixed32 test_device_id = 1;
+
   // Time of the latest test. Added by the test fixture.
   optional fixed64 test_time = 2;
 }
@@ -106,17 +108,17 @@ message PowerConfig {
 message SerialConfig {
   enum SerialFunction {
     USER_CONFIGURED = 0;
-    RC = 1;
+    REMOTE_CONTROL = 1;
     TELEMETRY = 2;
     MULTIWII_SERIAL_PROTOCOL = 3;
   }
   optional SerialFunction function = 1;
 
-  enum RCProtocol {
-    RC_USER_CONFIGURED = 0;
+  enum RemoteControlProtocol {
+    REMOTE_CONTROL_USER_CONFIGURED = 0;
     SBUS = 1;
   }
-  optional RCProtocol rc_protocol = 2;
+  optional RemoteControlProtocol remote_control_protocol = 2;
 
   enum TelemetryProtocol {
     TELEMETRY_USER_CONFIGURED = 0;
@@ -127,7 +129,11 @@ message SerialConfig {
 }
 
 message TimerGroupConfig {
-
+  enum TimerGroupFunction {
+    USER_CONFIGURED = 0;
+    PWM_INPUT = 1;
+  }
+  optional TimerGroupFunction function = 1;
 }
 
 message ADCConfig {
@@ -148,10 +154,10 @@ message SPIConfig {
 }
 
 message PolystackMod {
-  // Use 1 unless things change. Most protocol buffer versioning should happen
-  // through additional fields but this is a sanity check. As a rule, NEVER
-  // change the meaning of a field and leave the field number the same. Always
-  // add a new field instead.
+  // Use 1 unless things change. Most protocol buffering should happen through
+  // additional fields but this is a sanity check. As a rule, NEVER change the
+  // meaning of a field and leave the field number the same. Always add a new
+  // field instead.
   optional uint32 proto_version = 1;
   optional ModInfo mod_info = 2;
 
