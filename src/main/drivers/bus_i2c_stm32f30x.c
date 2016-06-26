@@ -191,7 +191,7 @@ bool i2cReadHelper(I2CDevice device, uint8_t addr_, bool two_byte_register_addre
     }
 
     uint8_t address_bytes = 1;
-    if (!two_byte_register_address) {
+    if (two_byte_register_address) {
       address_bytes = 2;
     }
 
@@ -207,7 +207,7 @@ bool i2cReadHelper(I2CDevice device, uint8_t addr_, bool two_byte_register_addre
     }
 
     /* Send Register address */
-    if (!two_byte_register_address) {
+    if (two_byte_register_address) {
       I2C_SendData(I2Cx, (uint8_t) (reg >> 8));
       /* Wait until TXIS flag is set */
       i2cTimeout = I2C_LONG_TIMEOUT;
