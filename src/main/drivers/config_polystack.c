@@ -198,6 +198,14 @@ void polystackAutoConfigure(void) {
       }
       gpio_index++;
     }
+    // Configure single timer pins based on the protos stored in mod memory.
+    for (int i = 0; i < mod.single_timer_config_count; ++i) {
+      const SingleTimerConfig* config = &mod.single_timer_config[i];
+      if (config->which_function == 0 &&
+         config->function.input == SingleTimerConfig_TimerInputFunction_PPM) {
+        featureSet(FEATURE_RX_PPM);
+      }
+    }
   }
 
   //masterConfig->serialConfig
