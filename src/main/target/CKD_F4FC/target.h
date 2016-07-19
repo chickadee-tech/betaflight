@@ -80,7 +80,7 @@
 
 // TODO(tannewt): Figure out sharing DMA streams between functions because the
 // same stream for USART5 is used by the drivers/dma* code too.
-//#define USE_UART5
+#define USE_UART5
 #define UART5_RX_PIN PD2
 #define UART5_TX_PIN PC12
 
@@ -88,7 +88,7 @@
 #define UART6_RX_PIN PC7
 #define UART6_TX_PIN PC6
 
-#define SERIAL_PORT_COUNT 6
+#define SERIAL_PORT_COUNT 7
 
 #define POLYSTACK_SERIAL_PORT_ORDER {SERIAL_PORT_USART3, SERIAL_PORT_USART1, SERIAL_PORT_USART6, SERIAL_PORT_USART2, SERIAL_PORT_USART4, SERIAL_PORT_USART5}
 #define POLYSTACK_GPIO_PORT_ORDER {IO_TAG(PA13), IO_TAG(PA14), IO_TAG(PE4), IO_TAG(PE3), IO_TAG(PE2), IO_TAG(PB8)}
@@ -139,6 +139,8 @@
 
 #define USE_I2C
 #define I2C_DEVICE (I2CDEV_1)
+#define I2C1_SCL PB6
+#define I2C1_SDA PB7
 
 #define USE_ADC
 #define BOARD_HAS_VOLTAGE_DIVIDER
