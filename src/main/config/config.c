@@ -177,6 +177,8 @@ static const uint8_t EEPROM_CONF_VERSION = 143;
 
 extern uint8_t hardwareRevision;
 
+extern uint8_t hardwareRevision;
+
 static void resetAccelerometerTrims(flightDynamicsTrims_t *accelerometerTrims)
 {
     accelerometerTrims->values.pitch = 0;
