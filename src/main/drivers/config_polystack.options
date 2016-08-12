@@ -11,4 +11,4 @@ ModInfo.manufacturer_url              max_size: 256
 ModInfo.mod_name                max_size: 64
 ModInfo.mod_url                 max_size: 256
 
-ManufacturingInfo.test_device_id           max_count: 3
+ManufacturingInfo.test_device_id           max_count: 255
